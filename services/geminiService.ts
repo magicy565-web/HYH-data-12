@@ -2,6 +2,22 @@
 import { GoogleGenAI, Part } from "@google/genai";
 import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokShopLink, TikTokCreator, TikTokDiscoveryFilters, TradeCountry, TradeResearchResult, TradeChannel, Buyer, Language, CantonFairData } from "../types";
 
+// Helper to ensure API Key exists and log debug info
+const getAiClient = () => {
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    console.error("[Gemini Service] API Key is missing! Value is empty or undefined.");
+    console.error("[Gemini Service] Please check Vercel Settings -> Environment Variables -> VITE_API_KEY.");
+    throw new Error("API Key configuration error. Please check console logs.");
+  }
+  
+  // Debug log (safely)
+  console.log("[Gemini Service] Initializing with API Key length:", apiKey.length);
+  
+  return new GoogleGenAI({ apiKey });
+};
+
 const convertFileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -17,7 +33,7 @@ const convertFileToBase64 = (file: File): Promise<string> => {
 };
 
 export const analyzeMarket = async (formData: FormData, lang: Language): Promise<ResearchResult> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAiClient();
 
   // Prepare image parts
   const imageParts: Part[] = await Promise.all(
@@ -141,7 +157,7 @@ export const analyzeMarket = async (formData: FormData, lang: Language): Promise
 };
 
 export const calculateLogistics = async (data: LogisticsFormData, lang: Language): Promise<LogisticsResult> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = getAiClient();
   
     const langInstruction = lang === 'zh' 
       ? "Respond in Simplified Chinese. (Currency can remain in USD)." 
@@ -208,7 +224,7 @@ export const calculateLogistics = async (data: LogisticsFormData, lang: Language
 };
 
 export const searchTikTokShop = async (shopName: string): Promise<TikTokShopLink[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAiClient();
 
   // CRITICAL FIX: We must use site:tiktok.com to ensure the grounding chunks returned by Google
   // are actually TikTok links. If we do a general search, the top results are often the brand's 
@@ -275,7 +291,7 @@ export const searchTikTokShop = async (shopName: string): Promise<TikTokShopLink
 };
 
 export const discoverTikTokCreators = async (filters: TikTokDiscoveryFilters, lang: Language): Promise<TikTokCreator[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAiClient();
 
   const langInstruction = lang === 'zh' 
   ? "Respond in Simplified Chinese (except for handle)." 
@@ -331,7 +347,7 @@ export const discoverTikTokCreators = async (filters: TikTokDiscoveryFilters, la
 };
 
 export const analyzeTradeMarket = async (country: TradeCountry, niche: string, lang: Language): Promise<TradeResearchResult> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAiClient();
 
   const langInstruction = lang === 'zh' 
     ? "Respond in Simplified Chinese." 
@@ -400,7 +416,7 @@ export const analyzeTradeMarket = async (country: TradeCountry, niche: string, l
 };
 
 export const findTradeBuyers = async (country: TradeCountry, channel: TradeChannel, niche: string, lang: Language): Promise<Buyer[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAiClient();
 
   const langInstruction = lang === 'zh' 
     ? "Respond in Simplified Chinese." 
@@ -467,29 +483,10 @@ export const findTradeBuyers = async (country: TradeCountry, channel: TradeChann
 
 /**
  * SIMULATED LOCAL DATABASE QUERY
- * 
- * In a real production environment, this function would make an HTTP request to a backend 
- * (Node.js, Python, Go) which would then query a MySQL database.
- * 
- * SQL SCHEMA FOR REFERENCE:
- * 
- * CREATE TABLE canton_fair_buyers (
- *   id INT AUTO_INCREMENT PRIMARY KEY,
- *   country VARCHAR(50) NOT NULL, -- e.g. 'UK', 'US'
- *   buyer_name VARCHAR(255) NOT NULL,
- *   products_sourced TEXT,
- *   contact_info VARCHAR(255),
- *   session_year INT NOT NULL, -- 2023, 2024
- *   session_season VARCHAR(10) -- 'Spring', 'Autumn'
- * );
  */
 export const searchCantonFairDatabase = async (country: string, product: string, year: string): Promise<CantonFairData[]> => {
   // Simulate network latency
   await new Promise(resolve => setTimeout(resolve, 1200));
-
-  // Mock Data Response based on input to simulate a "hit"
-  // In reality, this data would come from the MySQL database query: 
-  // SELECT * FROM canton_fair_buyers WHERE country = ? AND session_year = ? AND products_sourced LIKE ?
   
   const mockData: CantonFairData[] = [
     {
