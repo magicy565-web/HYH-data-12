@@ -139,3 +139,22 @@ export interface CantonFairData {
 }
 
 export type Language = 'en' | 'zh';
+
+// --- Report / Shopping Cart Types ---
+export type ReportItemType = 'text' | 'chart-line' | 'chart-bar' | 'swot';
+
+export interface ReportItem {
+  id: string;
+  type: ReportItemType;
+  title: string;
+  comment?: string;
+  timestamp: number;
+  data: any; // Raw data payload (JSON)
+}
+
+export interface ReportContextType {
+  items: ReportItem[];
+  addItem: (item: Omit<ReportItem, 'id' | 'timestamp'>) => void;
+  removeItem: (id: string) => void;
+  clearReport: () => void;
+}

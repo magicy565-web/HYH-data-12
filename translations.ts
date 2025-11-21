@@ -159,6 +159,22 @@ export const translations = {
       discover: "Discover Creators",
       noCreators: "No matching creators found.",
     },
+    report: {
+      addToReport: "Add to Report",
+      added: "Added",
+      builderTitle: "Insights Cart",
+      empty: "Your cart is empty. Add charts or insights from the analysis.",
+      generate: "Generate PPT Report",
+      items: "Items",
+      remove: "Remove",
+      commentPlaceholder: "Add a note...",
+      type: {
+        "chart-line": "Trend Chart",
+        "chart-bar": "Share Chart",
+        "swot": "SWOT Analysis",
+        "text": "Text Insight"
+      }
+    }
   },
   zh: {
     nav: {
@@ -317,5 +333,21 @@ export const translations = {
       discover: "发现创作者",
       noCreators: "未找到匹配的创作者。",
     },
+    report: {
+      addToReport: "添加到报告",
+      added: "已添加",
+      builderTitle: "洞察购物车",
+      empty: "购物车为空。请添加图表或分析结论。",
+      generate: "生成 PPT 报告",
+      items: "项目",
+      remove: "删除",
+      commentPlaceholder: "添加批注...",
+      type: {
+        "chart-line": "趋势图",
+        "chart-bar": "份额图",
+        "swot": "SWOT 分析",
+        "text": "文本结论"
+      }
+    }
   },
 };
