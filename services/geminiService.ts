@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Part } from "@google/genai";
-import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokShopLink, TikTokCreator, TikTokDiscoveryFilters, TradeCountry, TradeResearchResult, TradeChannel, Buyer, Language, CantonFairData, BuyerSize } from "../types";
+import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokShopLink, TikTokCreator, TikTokDiscoveryFilters, TradeCountry, TradeResearchResult, TradeChannel, Buyer, Language, CantonFairData } from "../types";
 
 // Helper to ensure API Key exists and log debug info
 const getAiClient = () => {
@@ -415,22 +415,12 @@ export const analyzeTradeMarket = async (country: TradeCountry, niche: string, l
   }
 };
 
-export const findTradeBuyers = async (
-  country: TradeCountry, 
-  channel: TradeChannel, 
-  niche: string, 
-  size: BuyerSize,
-  distChannels: string,
-  lang: Language
-): Promise<Buyer[]> => {
+export const findTradeBuyers = async (country: TradeCountry, channel: TradeChannel, niche: string, lang: Language): Promise<Buyer[]> => {
   const ai = getAiClient();
 
   const langInstruction = lang === 'zh' 
     ? "Respond in Simplified Chinese." 
     : "Respond in English.";
-
-  const sizeInstruction = size !== 'Any' ? `Target Buyer Size: ${size}.` : '';
-  const distInstruction = distChannels ? `Preferred Existing Distribution Channels: ${distChannels}.` : '';
 
   const promptText = `
     Act as a B2B Sales Director.
@@ -438,8 +428,6 @@ export const findTradeBuyers = async (
     Target Country: ${country}
     Target Channel: ${channel}
     Product Category: "${niche}"
-    ${sizeInstruction}
-    ${distInstruction}
 
     Task:
     Find 5-10 specific potential buyers, retailers, or distributor companies in ${country} that operate in the ${channel} sector and would likely stock ${niche}.

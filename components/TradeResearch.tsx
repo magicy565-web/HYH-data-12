@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { MapPin, Search, Loader2, Gauge, AlertTriangle, CheckCircle, Info, ShoppingBag, Store, Building2, Briefcase, Database, Calendar, FileSpreadsheet, Maximize2, Network } from 'lucide-react';
-import { TradeCountry, TradeResearchResult, Language, TradeChannel, Buyer, CantonFairData, BuyerSize } from '../types';
+import { MapPin, Search, Loader2, Gauge, AlertTriangle, CheckCircle, Info, ShoppingBag, Store, Building2, Briefcase, Database, Calendar, FileSpreadsheet } from 'lucide-react';
+import { TradeCountry, TradeResearchResult, Language, TradeChannel, Buyer, CantonFairData } from '../types';
 import { analyzeTradeMarket, findTradeBuyers, searchCantonFairDatabase } from '../services/geminiService';
 import { translations } from '../translations';
 
@@ -25,8 +25,6 @@ export const TradeResearch: React.FC<Props> = ({ language }) => {
   const [buyerCountry, setBuyerCountry] = useState<TradeCountry>(TradeCountry.UK);
   const [buyerChannel, setBuyerChannel] = useState<TradeChannel>(TradeChannel.SUPERMARKET);
   const [buyerNiche, setBuyerNiche] = useState('');
-  const [buyerSize, setBuyerSize] = useState<BuyerSize>('Any');
-  const [buyerDistChannels, setBuyerDistChannels] = useState('');
   const [isBuyerLoading, setIsBuyerLoading] = useState(false);
   const [buyerResult, setBuyerResult] = useState<Buyer[]>([]);
   const [hasSearchedBuyers, setHasSearchedBuyers] = useState(false);
@@ -68,7 +66,7 @@ export const TradeResearch: React.FC<Props> = ({ language }) => {
     setHasSearchedBuyers(false);
 
     try {
-      const data = await findTradeBuyers(buyerCountry, buyerChannel, buyerNiche, buyerSize, buyerDistChannels, language);
+      const data = await findTradeBuyers(buyerCountry, buyerChannel, buyerNiche, language);
       setBuyerResult(data);
     } catch (error) {
       console.error(error);
@@ -326,39 +324,6 @@ export const TradeResearch: React.FC<Props> = ({ language }) => {
                         ))}
                      </select>
                   </div>
-                </div>
-              </div>
-
-              {/* Buyer Size */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t.buyer.size}</label>
-                <div className="relative">
-                    <Maximize2 className="absolute left-3 top-2.5 w-5 h-5 text-slate-400" />
-                    <select
-                        value={buyerSize}
-                        onChange={(e) => setBuyerSize(e.target.value as BuyerSize)}
-                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white appearance-none"
-                    >
-                        <option value="Any">{t.buyer.sizes['Any']}</option>
-                        <option value="Small">{t.buyer.sizes['Small']}</option>
-                        <option value="Medium">{t.buyer.sizes['Medium']}</option>
-                        <option value="Large">{t.buyer.sizes['Large']}</option>
-                    </select>
-                </div>
-              </div>
-
-              {/* Distribution Channels */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t.buyer.distChannels}</label>
-                <div className="relative">
-                   <Network className="absolute left-3 top-2.5 w-5 h-5 text-slate-400" />
-                   <input
-                      type="text"
-                      value={buyerDistChannels}
-                      onChange={(e) => setBuyerDistChannels(e.target.value)}
-                      placeholder={t.buyer.distChannelsPlaceholder}
-                      className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                   />
                 </div>
               </div>
 
