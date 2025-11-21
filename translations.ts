@@ -86,6 +86,15 @@ export const translations = {
         title: "Find Offline Buyers",
         subtitle: "Connect with potential retailers and distributors.",
         channel: "Target Channel",
+        size: "Target Buyer Size",
+        distChannels: "Existing Distribution Channels",
+        distChannelsPlaceholder: "e.g. Online, Wholesale, Direct to Store",
+        sizes: {
+          'Small': "Small (Local)",
+          'Medium': "Medium (Regional)",
+          'Large': "Large (National/International)",
+          'Any': "Any Size"
+        },
         channels: {
           [TradeChannel.SUPERMARKET]: "Supermarket",
           [TradeChannel.RETAIL_STORE]: "Retail Store",
@@ -159,6 +168,22 @@ export const translations = {
       discover: "Discover Creators",
       noCreators: "No matching creators found.",
     },
+    report: {
+      addToReport: "Add to Report",
+      added: "Added",
+      builderTitle: "Insights Cart",
+      empty: "Your cart is empty. Add charts or insights from the analysis.",
+      generate: "Generate PPT Report",
+      items: "Items",
+      remove: "Remove",
+      commentPlaceholder: "Add a note...",
+      type: {
+        "chart-line": "Trend Chart",
+        "chart-bar": "Share Chart",
+        "swot": "SWOT Analysis",
+        "text": "Text Insight"
+      }
+    }
   },
   zh: {
     nav: {
@@ -244,6 +269,15 @@ export const translations = {
         title: "寻找线下采购商",
         subtitle: "精准匹配目标区域的零售商和分销商资源。",
         channel: "目标渠道",
+        size: "目标采购商规模",
+        distChannels: "现有分销渠道",
+        distChannelsPlaceholder: "例如：线上, 批发, 直营店",
+        sizes: {
+          'Small': "小型 (本地)",
+          'Medium': "中型 (区域级)",
+          'Large': "大型 (全国/国际级)",
+          'Any': "不限"
+        },
         channels: {
           [TradeChannel.SUPERMARKET]: "超市",
           [TradeChannel.RETAIL_STORE]: "零售店",
@@ -317,5 +351,21 @@ export const translations = {
       discover: "发现创作者",
       noCreators: "未找到匹配的创作者。",
     },
+    report: {
+      addToReport: "添加到报告",
+      added: "已添加",
+      builderTitle: "洞察购物车",
+      empty: "购物车为空。请添加图表或分析结论。",
+      generate: "生成 PPT 报告",
+      items: "项目",
+      remove: "删除",
+      commentPlaceholder: "添加批注...",
+      type: {
+        "chart-line": "趋势图",
+        "chart-bar": "份额图",
+        "swot": "SWOT 分析",
+        "text": "文本结论"
+      }
+    }
   },
 };
