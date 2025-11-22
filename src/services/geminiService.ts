@@ -1,21 +1,23 @@
-/// <reference types="vite/client" />
-
 import { GoogleGenAI, Part } from "@google/genai";
 import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokShopLink, TikTokCreator, TikTokDiscoveryFilters, TradeCountry, TradeResearchResult, TradeChannel, Buyer, Language, CantonFairData, BuyerSize } from "../types";
 
 // Helper to ensure API Key exists and log debug info
 const getAiClient = () => {
-  // Safe access to process.env for fallback (node/legacy envs)
-  const processEnv = typeof process !== 'undefined' ? process.env : {};
+  // 1. Safe access to process.env (prevents ReferenceError in browser)
+  const safeProcess = typeof process !== 'undefined' ? process : { env: {} };
   
-  // Access Vite env safely. We cast import.meta to any to bypass strict TS checks if types are missing in some contexts
-  const viteEnv = (import.meta as any).env || {};
+  // 2. Prioritize Vite standard import.meta.env, fallback to process.env
+  // We use 'as any' to avoid TypeScript complaining if types aren't perfectly set up
+  const viteKey = (import.meta as any).env?.VITE_API_KEY;
+  const processKey = safeProcess.env?.API_KEY;
   
-  const apiKey = viteEnv.VITE_API_KEY || processEnv.API_KEY;
+  const apiKey = viteKey || processKey;
   
   if (!apiKey || apiKey.length < 10) {
     console.error("[Gemini Service] CRITICAL ERROR: API Key is missing or invalid.");
-    throw new Error("API Key is missing. Please check your application configuration.");
+    console.log("Debug Info - Vite Key Exists:", !!viteKey);
+    console.log("Debug Info - Process Key Exists:", !!processKey);
+    throw new Error("API Key is missing. Please check your Vercel Environment Variables (VITE_API_KEY).");
   }
   
   return new GoogleGenAI({ apiKey });
@@ -142,6 +144,7 @@ export const analyzeMarket = async (formData: FormData, lang: Language): Promise
         });
     }
 
+    // Return safe structure
     return {
       marketSummary: parsedData.marketSummary || "",
       fiveYearTrendAnalysis: parsedData.fiveYearTrendAnalysis || "",
