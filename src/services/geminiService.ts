@@ -1,26 +1,22 @@
 import { GoogleGenAI, Part } from "@google/genai";
 import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokShopLink, TikTokCreator, TikTokDiscoveryFilters, TradeCountry, TradeResearchResult, TradeChannel, Buyer, Language, CantonFairData, BuyerSize } from "../types";
 
-// Helper to ensure API Key exists and log debug info
 const getAiClient = () => {
-  // 1. Safe access to process.env (prevents ReferenceError in browser)
+  // Safe access to process.env
   const safeProcess = typeof process !== 'undefined' ? process : { env: {} as any };
   
-  // 2. Prioritize Vite standard import.meta.env, fallback to process.env
-  // We use 'as any' to avoid TypeScript complaining if types aren't perfectly set up
+  // Prioritize Vite standard import.meta.env
   const viteKey = (import.meta as any).env?.VITE_API_KEY;
   const processKey = safeProcess.env?.API_KEY;
   
   const apiKey = viteKey || processKey;
   
-  if (!apiKey || typeof apiKey !== 'string' || apiKey.length < 10) {
-    console.error("[Gemini Service] CRITICAL ERROR: API Key is missing or invalid.");
-    console.log("Debug Info - Vite Key Exists:", !!viteKey);
-    console.log("Debug Info - Process Key Exists:", !!processKey);
-    throw new Error("API Key is missing. Please check your Vercel Environment Variables (VITE_API_KEY).");
+  if (!apiKey || apiKey.length < 10) {
+    console.error("[Gemini Service] API Key is missing or invalid.");
+    throw new Error("API Key is missing. Please check your application configuration.");
   }
   
-  return new GoogleGenAI({ apiKey: apiKey as string });
+  return new GoogleGenAI({ apiKey });
 };
 
 const convertFileToBase64 = (file: File): Promise<string> => {
@@ -144,13 +140,28 @@ export const analyzeMarket = async (formData: FormData, lang: Language): Promise
         });
     }
 
-    // Return safe structure
+    // --- CRITICAL FIX: DATA SANITIZATION ---
+    // Convert string numbers to actual numbers to prevent Recharts crash
+    const sanitizedTrends = (parsedData.chartData?.trends || []).map((t: any) => ({
+      ...t,
+      marketSize: Number(t.marketSize) || 0
+    }));
+
+    const sanitizedShares = (parsedData.chartData?.shares || []).map((s: any) => ({
+      ...s,
+      share: Number(s.share) || 0
+    }));
+    // ---------------------------------------
+
     return {
       marketSummary: parsedData.marketSummary || "",
       fiveYearTrendAnalysis: parsedData.fiveYearTrendAnalysis || "",
       swot: parsedData.swot || { strengths: [], weaknesses: [], opportunities: [], threats: [] },
       competitors: parsedData.competitors || [],
-      chartData: parsedData.chartData || { trends: [], shares: [] },
+      chartData: {
+        trends: sanitizedTrends,
+        shares: sanitizedShares
+      },
       rawSearchLinks
     };
 
