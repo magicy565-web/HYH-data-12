@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ResearchResult, FormData, Language } from '../types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, Legend } from 'recharts';
 import { TrendingUp, AlertCircle, Target, Shield, ArrowUpRight, ExternalLink } from 'lucide-react';
@@ -13,6 +13,19 @@ interface Props {
 
 const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e'];
 
+// Custom Tooltip to avoid Recharts internal DOM issues
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-2 border border-slate-200 shadow-sm rounded text-xs">
+        <p className="font-semibold">{label}</p>
+        <p className="text-blue-600">{`${payload[0].name}: ${payload[0].value}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export const ResultsView: React.FC<Props> = ({ result, formData, language }) => {
   const t = translations[language].results;
   const marketName = translations[language].online.markets[formData.market] || formData.market;
@@ -22,12 +35,16 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
 
   const competitors = Array.isArray(result.competitors) ? result.competitors : [];
   
-  // Strict chart data validation
-  const trendsData = (Array.isArray(result.chartData?.trends) ? result.chartData.trends : [])
-    .map(item => ({...item, marketSize: Number(item.marketSize) || 0}));
+  // Memoize data to prevent unnecessary re-renders
+  const trendsData = useMemo(() => 
+    (Array.isArray(result.chartData?.trends) ? result.chartData.trends : [])
+    .map(item => ({...item, marketSize: Number(item.marketSize) || 0})),
+  [result.chartData?.trends]);
 
-  const sharesData = (Array.isArray(result.chartData?.shares) ? result.chartData.shares : [])
-    .map(item => ({...item, share: Number(item.share) || 0}));
+  const sharesData = useMemo(() => 
+    (Array.isArray(result.chartData?.shares) ? result.chartData.shares : [])
+    .map(item => ({...item, share: Number(item.share) || 0})),
+  [result.chartData?.shares]);
   
   const rawSwot = result.swot || {};
   const swot = {
@@ -165,14 +182,12 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
           <div className="h-64 w-full">
             {trendsData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendsData}>
+                {/* Key forces complete remount when data changes, avoiding update errors */}
+                <LineChart key={JSON.stringify(trendsData)} data={trendsData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="year" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                     isAnimationActive={false}
-                     contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }} isAnimationActive={false} />
                   <Line type="monotone" dataKey="marketSize" stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
@@ -198,7 +213,9 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
           <div className="h-64 w-full">
              {sharesData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
+                {/* Key forces complete remount when data changes, avoiding update errors */}
                 <BarChart 
+                  key={JSON.stringify(sharesData)}
                   data={sharesData} 
                   layout="vertical" 
                   margin={{ left: 40 }}
@@ -206,11 +223,7 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
                   <XAxis type="number" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} unit="%" />
                   <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={10} width={100} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                      isAnimationActive={false}
-                      cursor={{fill: 'transparent'}}
-                      contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}} isAnimationActive={false} />
                   <Bar 
                     dataKey="share" 
                     radius={[0, 4, 4, 0]} 
