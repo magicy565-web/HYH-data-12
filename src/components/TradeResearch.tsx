@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Loader2, AlertTriangle, CheckCircle, Info, ShoppingBag, Store, Building2, Briefcase, Database, Calendar, FileSpreadsheet } from 'lucide-react';
+import { MapPin, Search, Loader2, Gauge, AlertTriangle, CheckCircle, Info, ShoppingBag, Store, Building2, Briefcase, Database, Calendar, FileSpreadsheet } from 'lucide-react';
 import { TradeCountry, TradeResearchResult, Language, TradeChannel, Buyer, CantonFairData, BuyerSize } from '../types';
 import { analyzeTradeMarket, findTradeBuyers, searchCantonFairDatabase } from '../services/geminiService';
 import { translations } from '../translations';
@@ -332,7 +332,6 @@ export const TradeResearch: React.FC<Props> = ({ language }) => {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">{t.buyer.size}</label>
                 <div className="relative">
-                    {/* Lucide icon placeholder if not available in list, used Maximize2 in previous context */}
                     <Store className="absolute left-3 top-2.5 w-5 h-5 text-slate-400" /> 
                     <select
                         value={buyerSize}
