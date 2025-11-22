@@ -1,23 +1,41 @@
+/// <reference types="vite/client" />
+
 import { GoogleGenAI, Part } from "@google/genai";
 import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokShopLink, TikTokCreator, TikTokDiscoveryFilters, TradeCountry, TradeResearchResult, TradeChannel, Buyer, Language, CantonFairData, BuyerSize } from "../types";
 
+// Define a safe interface for process.env to satisfy TypeScript
+interface SafeProcessEnv {
+  API_KEY?: string;
+  [key: string]: string | undefined;
+}
+
 // Helper to ensure API Key exists and log debug info
 const getAiClient = () => {
-  // 1. Safe access to process.env (prevents ReferenceError in browser)
-  const safeProcess = typeof process !== 'undefined' ? process : { env: {} };
-  
-  // 2. Prioritize Vite standard import.meta.env, fallback to process.env
-  // We use 'as any' to avoid TypeScript complaining if types aren't perfectly set up
-  const viteKey = (import.meta as any).env?.VITE_API_KEY;
-  const processKey = safeProcess.env?.API_KEY;
+  // 1. Try Vite standard env (safely accessed)
+  // We cast to 'any' first to avoid TS errors if types aren't perfect in all contexts
+  const viteEnv = (import.meta as any).env || {};
+  const viteKey = viteEnv.VITE_API_KEY;
+
+  // 2. Try process.env fallback (safely accessed)
+  // We cast process to 'any' to avoid "process is not defined" or type errors
+  let processKey: string | undefined;
+  try {
+    if (typeof process !== 'undefined') {
+      const proc = process as any;
+      if (proc.env) {
+        processKey = proc.env.API_KEY;
+      }
+    }
+  } catch (e) {
+    // Ignore access errors
+  }
   
   const apiKey = viteKey || processKey;
   
   if (!apiKey || apiKey.length < 10) {
     console.error("[Gemini Service] CRITICAL ERROR: API Key is missing or invalid.");
-    console.log("Debug Info - Vite Key Exists:", !!viteKey);
-    console.log("Debug Info - Process Key Exists:", !!processKey);
-    throw new Error("API Key is missing. Please check your Vercel Environment Variables (VITE_API_KEY).");
+    console.warn("Checked VITE_API_KEY and process.env.API_KEY. Both are empty.");
+    throw new Error("API Key is missing. Please check your application configuration (VITE_API_KEY).");
   }
   
   return new GoogleGenAI({ apiKey });
@@ -144,7 +162,6 @@ export const analyzeMarket = async (formData: FormData, lang: Language): Promise
         });
     }
 
-    // Return safe structure
     return {
       marketSummary: parsedData.marketSummary || "",
       fiveYearTrendAnalysis: parsedData.fiveYearTrendAnalysis || "",
