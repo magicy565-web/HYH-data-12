@@ -63,10 +63,8 @@ export const ReportBuilder: React.FC<Props> = ({ language }) => {
     pres.writeFile({ fileName: "HYH-Report.pptx" });
   };
 
-  if (items.length === 0 && !isOpen) return null;
-
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
       {isOpen && (
         <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-80 sm:w-96 mb-4 overflow-hidden flex flex-col animate-fade-in-up max-h-[500px]">
           <div className="bg-blue-600 p-4 flex justify-between items-center">
@@ -98,7 +96,11 @@ export const ReportBuilder: React.FC<Props> = ({ language }) => {
       )}
       <button onClick={() => setIsOpen(!isOpen)} className="bg-blue-600 text-white p-3.5 rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-105 flex items-center justify-center relative">
         {isOpen ? <ChevronDown className="w-6 h-6" /> : <ShoppingCart className="w-6 h-6" />}
-        {!isOpen && items.length > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">{items.length}</span>}
+        {items.length > 0 && !isOpen && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
+                {items.length}
+            </span>
+        )}
       </button>
     </div>
   );

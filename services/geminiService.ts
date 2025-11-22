@@ -6,14 +6,12 @@ import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokSho
 const getAiClient = () => {
   const apiKey = process.env.API_KEY;
   
-  if (!apiKey) {
-    console.error("[Gemini Service] API Key is missing! Value is empty or undefined.");
-    console.error("[Gemini Service] Please check Vercel Settings -> Environment Variables -> VITE_API_KEY.");
-    throw new Error("API Key configuration error. Please check console logs.");
+  if (!apiKey || apiKey.length < 10) {
+    console.error("[Gemini Service] CRITICAL ERROR: API Key is missing or invalid.");
+    console.error("[Gemini Service] Current Key Value:", apiKey ? "Present (Hidden)" : "Undefined/Null");
+    // Throwing a user-friendly error that will be caught by the UI
+    throw new Error("API Key is missing. Please check your application configuration.");
   }
-  
-  // Debug log (safely)
-  console.log("[Gemini Service] Initializing with API Key length:", apiKey.length);
   
   return new GoogleGenAI({ apiKey });
 };
@@ -226,9 +224,6 @@ export const calculateLogistics = async (data: LogisticsFormData, lang: Language
 export const searchTikTokShop = async (shopName: string): Promise<TikTokShopLink[]> => {
   const ai = getAiClient();
 
-  // CRITICAL FIX: We must use site:tiktok.com to ensure the grounding chunks returned by Google
-  // are actually TikTok links. If we do a general search, the top results are often the brand's 
-  // official website or Instagram, pushing the TikTok links out of the limited "groundingChunks" list.
   const promptText = `
     Act as a Social Media Researcher.
     
@@ -251,14 +246,12 @@ export const searchTikTokShop = async (shopName: string): Promise<TikTokShopLink
       }
     });
 
-    // Grounding chunks are the most reliable source for links
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     const links: TikTokShopLink[] = [];
 
     if (chunks) {
       chunks.forEach((chunk: any) => {
         if (chunk.web?.uri) {
-          // STRICT FILTER: Only allow tiktok.com links
           if (chunk.web.uri.toLowerCase().includes('tiktok.com')) {
               links.push({
                 title: chunk.web.title || "TikTok Result",
@@ -269,10 +262,8 @@ export const searchTikTokShop = async (shopName: string): Promise<TikTokShopLink
       });
     }
 
-    // 1. Deduplicate links
     const uniqueLinks = Array.from(new Map(links.map(item => [item.url, item])).values());
 
-    // 2. Sort: Prioritize 'profile' links (@username) over video links for better UX
     const sortedLinks = uniqueLinks.sort((a, b) => {
         const aIsProfile = a.url.includes('/@') && !a.url.includes('/video/');
         const bIsProfile = b.url.includes('/@') && !b.url.includes('/video/');
@@ -395,7 +386,6 @@ export const analyzeTradeMarket = async (country: TradeCountry, niche: string, l
        try {
          result = JSON.parse(text);
        } catch(e) {
-         // Fallback random score generation if parsing fails (to prevent app crash, but ideally should handle error)
          console.error("Parsing failed, using default", e);
          throw new Error("Failed to analyze trade market.");
        }
@@ -481,11 +471,7 @@ export const findTradeBuyers = async (country: TradeCountry, channel: TradeChann
   }
 };
 
-/**
- * SIMULATED LOCAL DATABASE QUERY
- */
 export const searchCantonFairDatabase = async (country: string, product: string, year: string): Promise<CantonFairData[]> => {
-  // Simulate network latency
   await new Promise(resolve => setTimeout(resolve, 1200));
   
   const mockData: CantonFairData[] = [
