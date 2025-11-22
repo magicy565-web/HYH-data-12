@@ -22,15 +22,19 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
 
   const competitors = Array.isArray(result.competitors) ? result.competitors : [];
   
-  // Double check chart data safety
-  const trendsData = Array.isArray(result.chartData?.trends) ? result.chartData.trends : [];
-  const sharesData = Array.isArray(result.chartData?.shares) ? result.chartData.shares : [];
+  // Strict data validation
+  const trendsData = (Array.isArray(result.chartData?.trends) ? result.chartData.trends : [])
+    .filter(item => item && typeof item.marketSize === 'number');
+
+  const sharesData = (Array.isArray(result.chartData?.shares) ? result.chartData.shares : [])
+    .filter(item => item && typeof item.share === 'number');
   
+  const rawSwot = result.swot || {};
   const swot = {
-    strengths: Array.isArray(result.swot?.strengths) ? result.swot.strengths : [],
-    weaknesses: Array.isArray(result.swot?.weaknesses) ? result.swot.weaknesses : [],
-    opportunities: Array.isArray(result.swot?.opportunities) ? result.swot.opportunities : [],
-    threats: Array.isArray(result.swot?.threats) ? result.swot.threats : [],
+    strengths: Array.isArray(rawSwot.strengths) ? rawSwot.strengths : [],
+    weaknesses: Array.isArray(rawSwot.weaknesses) ? rawSwot.weaknesses : [],
+    opportunities: Array.isArray(rawSwot.opportunities) ? rawSwot.opportunities : [],
+    threats: Array.isArray(rawSwot.threats) ? rawSwot.threats : [],
   };
 
   const competitorReportData = competitors.map((c, i) => 
@@ -92,7 +96,7 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
                 )}
               </div>
             )) : (
-              <p className="text-sm text-slate-400 italic">No competitor data available.</p>
+              <p className="text-sm text-slate-400 italic py-4 text-center">No competitor data found.</p>
             )}
           </div>
         </div>
@@ -157,7 +161,7 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
                 language={language} 
             />
           </div>
-          <p className="text-sm text-slate-500 mb-6 h-10 line-clamp-2">{result.fiveYearTrendAnalysis}</p>
+          <p className="text-sm text-slate-500 mb-6 h-10 line-clamp-2">{result.fiveYearTrendAnalysis || ""}</p>
           <div className="h-64 w-full">
             {trendsData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -174,7 +178,9 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
                   <Line type="monotone" dataKey="marketSize" stroke="#2563eb" strokeWidth={3} dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
-            ) : <div className="flex h-full items-center justify-center text-slate-400">No trend data</div>}
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-400 text-sm">No trend data available.</div>
+            )}
           </div>
         </div>
 
@@ -194,7 +200,7 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
           </div>
            <p className="text-sm text-slate-500 mb-6 h-10">{t.shareSubtitle}</p>
           <div className="h-64 w-full">
-            {sharesData.length > 0 ? (
+             {sharesData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   data={sharesData} 
@@ -227,7 +233,9 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            ) : <div className="flex h-full items-center justify-center text-slate-400">No share data</div>}
+             ) : (
+              <div className="h-full flex items-center justify-center text-slate-400 text-sm">No share data available.</div>
+             )}
           </div>
         </div>
       </div>
