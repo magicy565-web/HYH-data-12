@@ -10,6 +10,7 @@ import { FormData, ResearchResult, Language } from './types';
 import { analyzeMarket } from './services/geminiService';
 import { translations } from './translations';
 import { ReportProvider } from './contexts/ReportContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'online' | 'trade' | 'logistics' | 'tiktok'>('online');
@@ -54,11 +55,13 @@ const App: React.FC = () => {
                   <h1 className="text-3xl font-bold text-slate-900">{t.nav.online}</h1>
                   <p className="mt-2 text-slate-600">{t.online.subtitle}</p>
                 </div>
-                <OnlineResearchForm 
-                  onSubmit={handleOnlineResearchSubmit} 
-                  isLoading={isLoading} 
-                  language={language}
-                />
+                <ErrorBoundary>
+                  <OnlineResearchForm 
+                    onSubmit={handleOnlineResearchSubmit} 
+                    isLoading={isLoading} 
+                    language={language}
+                  />
+                </ErrorBoundary>
               </div>
 
               {isLoading && (
@@ -71,14 +74,28 @@ const App: React.FC = () => {
               )}
 
               {result && lastFormData && (
-                <ResultsView result={result} formData={lastFormData} language={language} />
+                <ErrorBoundary>
+                  <ResultsView result={result} formData={lastFormData} language={language} />
+                </ErrorBoundary>
               )}
             </div>
           )}
 
-          {activeTab === 'trade' && <TradeResearch language={language} />}
-          {activeTab === 'logistics' && <LogisticsCalculator language={language} />}
-          {activeTab === 'tiktok' && <TikTokDiscover language={language} />}
+          {activeTab === 'trade' && (
+             <ErrorBoundary>
+                <TradeResearch language={language} />
+             </ErrorBoundary>
+          )}
+          {activeTab === 'logistics' && (
+             <ErrorBoundary>
+                <LogisticsCalculator language={language} />
+             </ErrorBoundary>
+          )}
+          {activeTab === 'tiktok' && (
+             <ErrorBoundary>
+                <TikTokDiscover language={language} />
+             </ErrorBoundary>
+          )}
         </main>
         
         <ReportBuilder language={language} />

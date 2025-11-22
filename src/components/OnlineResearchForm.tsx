@@ -1,5 +1,4 @@
-
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState, ChangeEvent, useEffect } from 'react';
 import { Upload, X, Search, Loader2, Globe, Target, Tag, DollarSign, Building2, Box } from 'lucide-react';
 import { FormData, TargetMarket, CompanyType, Language } from '../types';
 import { translations } from '../translations';
@@ -25,6 +24,17 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
   });
 
   const [errors, setErrors] = useState<{ companyWebsite?: string }>({});
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // Manage Object URLs to prevent memory leaks and rendering instability
+  useEffect(() => {
+    const newUrls = formData.images.map(file => URL.createObjectURL(file));
+    setPreviewUrls(newUrls);
+
+    return () => {
+      newUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [formData.images]);
 
   const validateUrl = (url: string): boolean => {
     if (!url) return true; 
@@ -262,10 +272,10 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
               </label>
             </div>
             <div className="flex space-x-4 overflow-x-auto py-2">
-              {formData.images.map((file, index) => (
+              {previewUrls.map((url, index) => (
                 <div key={index} className="relative w-36 h-36 rounded-xl overflow-hidden border border-slate-200 shadow-md group bg-white">
                   <img
-                    src={URL.createObjectURL(file)}
+                    src={url}
                     alt={`Preview ${index}`}
                     className="w-full h-full object-contain"
                   />
