@@ -39,7 +39,7 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
-  // Implemented moveItem to satisfy ReportContextType interface
+  // Define moveItem function
   const moveItem = (id: string, direction: 'up' | 'down') => {
     setItems(prev => {
       const index = prev.findIndex(i => i.id === id);
@@ -61,6 +61,7 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   return (
+    // CRITICAL FIX: 'moveItem' MUST be included in the value object here
     <ReportContext.Provider value={{ items, addItem, removeItem, moveItem, clearReport }}>
       {children}
     </ReportContext.Provider>
