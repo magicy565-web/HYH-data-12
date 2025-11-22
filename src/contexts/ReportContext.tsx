@@ -1,11 +1,21 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ReportItem, ReportContextType } from '../types';
 
-const ReportContext = createContext<ReportContextType | undefined>(undefined);
+// Define a safe default context to prevent crashes if Provider is missing
+const defaultContext: ReportContextType = {
+  items: [],
+  addItem: () => {},
+  removeItem: () => {},
+  moveItem: () => {},
+  clearReport: () => {}
+};
+
+const ReportContext = createContext<ReportContextType>(defaultContext);
 
 export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<ReportItem[]>([]);
 
+  // Load from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem('hyh_report_cart');
     if (stored) {
@@ -15,11 +25,12 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           setItems(parsed);
         }
       } catch (e) {
-        console.error("Failed to parse report cart", e);
+        console.error("Failed to parse report cart from storage", e);
       }
     }
   }, []);
 
+  // Save to localStorage on change
   useEffect(() => {
     localStorage.setItem('hyh_report_cart', JSON.stringify(items));
   }, [items]);
@@ -66,16 +77,9 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
 export const useReport = () => {
   const context = useContext(ReportContext);
-  if (context === undefined) {
-    // SAFETY FALLBACK: Prevent white screen if Provider is missing
-    console.warn('ReportContext is missing. Using fallback.');
-    return {
-      items: [],
-      addItem: () => console.log("Fallback addItem"),
-      removeItem: () => {},
-      moveItem: () => {},
-      clearReport: () => {}
-    };
+  // Safe fallback is handled by createContext default, but we add a double check
+  if (!context) {
+    return defaultContext;
   }
   return context;
 };
