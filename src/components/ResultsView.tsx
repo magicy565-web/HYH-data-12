@@ -18,26 +18,23 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
   const marketName = translations[language].online.markets[formData.market] || formData.market;
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
 
-  // 1. Safety check: If result is null/undefined, don't render (prevents crash)
   if (!result) return null;
 
-  // 2. Safe access to arrays with default empty arrays to prevent map errors
-  // Using these variables in JSX is safer than accessing result.competitors directly
-  const competitors = result.competitors || [];
-  const trendsData = result.chartData?.trends || [];
-  const sharesData = result.chartData?.shares || [];
+  const competitors = Array.isArray(result.competitors) ? result.competitors : [];
   
-  // 3. Deep safe access for SWOT
+  // Double check chart data safety
+  const trendsData = Array.isArray(result.chartData?.trends) ? result.chartData.trends : [];
+  const sharesData = Array.isArray(result.chartData?.shares) ? result.chartData.shares : [];
+  
   const swot = {
-    strengths: result.swot?.strengths || [],
-    weaknesses: result.swot?.weaknesses || [],
-    opportunities: result.swot?.opportunities || [],
-    threats: result.swot?.threats || []
+    strengths: Array.isArray(result.swot?.strengths) ? result.swot.strengths : [],
+    weaknesses: Array.isArray(result.swot?.weaknesses) ? result.swot.weaknesses : [],
+    opportunities: Array.isArray(result.swot?.opportunities) ? result.swot.opportunities : [],
+    threats: Array.isArray(result.swot?.threats) ? result.swot.threats : [],
   };
 
-  // Format competitor data safely for report
   const competitorReportData = competitors.map((c, i) => 
-    `${i+1}. ${c.name || 'Unknown'}\n   Features: ${c.features || '-'}\n   Price: ${c.price || 'N/A'}`
+    `${i+1}. ${c.name || 'Brand'}\n   Features: ${c.features || '-'}\n   Price: ${c.price || 'N/A'}`
   ).join('\n\n');
 
   return (
@@ -51,7 +48,7 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
             {marketName}
           </span>
         </div>
-        <p className="text-slate-700 leading-relaxed">{result.marketSummary || "No summary available."}</p>
+        <p className="text-slate-700 leading-relaxed">{result.marketSummary || "Analysis completed."}</p>
         
         <div className="absolute top-6 right-6">
              <AddToReportButton 
@@ -119,25 +116,25 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
              <div className="p-4 bg-green-50 rounded-lg border border-green-100">
                 <h4 className="font-semibold text-green-800 mb-2 text-sm">{t.strengths}</h4>
                 <ul className="list-disc list-inside text-xs text-green-900 space-y-1">
-                  {swot.strengths.length > 0 ? swot.strengths.map((s, i) => <li key={i}>{s}</li>) : <li>N/A</li>}
+                  {swot.strengths.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
              </div>
              <div className="p-4 bg-red-50 rounded-lg border border-red-100">
                 <h4 className="font-semibold text-red-800 mb-2 text-sm">{t.weaknesses}</h4>
                  <ul className="list-disc list-inside text-xs text-red-900 space-y-1">
-                  {swot.weaknesses.length > 0 ? swot.weaknesses.map((s, i) => <li key={i}>{s}</li>) : <li>N/A</li>}
+                  {swot.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
              </div>
              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <h4 className="font-semibold text-blue-800 mb-2 text-sm">{t.opportunities}</h4>
                  <ul className="list-disc list-inside text-xs text-blue-900 space-y-1">
-                  {swot.opportunities.length > 0 ? swot.opportunities.map((s, i) => <li key={i}>{s}</li>) : <li>N/A</li>}
+                  {swot.opportunities.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
              </div>
              <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
                 <h4 className="font-semibold text-amber-800 mb-2 text-sm">{t.threats}</h4>
                  <ul className="list-disc list-inside text-xs text-amber-900 space-y-1">
-                  {swot.threats.length > 0 ? swot.threats.map((s, i) => <li key={i}>{s}</li>) : <li>N/A</li>}
+                  {swot.threats.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
              </div>
           </div>
