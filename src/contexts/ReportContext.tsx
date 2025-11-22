@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ReportItem, ReportContextType } from '../types';
 
-// Define a safe default context to prevent crashes if Provider is missing
 const defaultContext: ReportContextType = {
   items: [],
   addItem: () => {},
@@ -15,30 +14,36 @@ const ReportContext = createContext<ReportContextType>(defaultContext);
 export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<ReportItem[]>([]);
 
-  // Load from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('hyh_report_cart');
-    if (stored) {
-      try {
+    try {
+      const stored = localStorage.getItem('hyh_report_cart');
+      if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
           setItems(parsed);
         }
-      } catch (e) {
-        console.error("Failed to parse report cart from storage", e);
       }
+    } catch (e) {
+      console.error("Failed to parse report cart", e);
     }
   }, []);
 
-  // Save to localStorage on change
   useEffect(() => {
-    localStorage.setItem('hyh_report_cart', JSON.stringify(items));
+    try {
+      localStorage.setItem('hyh_report_cart', JSON.stringify(items));
+    } catch (e) {
+      console.error("Failed to save report cart", e);
+    }
   }, [items]);
+
+  const generateId = () => {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  };
 
   const addItem = (item: Omit<ReportItem, 'id' | 'timestamp'>) => {
     const newItem: ReportItem = {
       ...item,
-      id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : String(Date.now() + Math.random()),
+      id: generateId(), // Use safer ID generation
       timestamp: Date.now()
     };
     setItems(prev => [...prev, newItem]);
@@ -77,9 +82,6 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
 export const useReport = () => {
   const context = useContext(ReportContext);
-  // Safe fallback is handled by createContext default, but we add a double check
-  if (!context) {
-    return defaultContext;
-  }
+  if (!context) return defaultContext;
   return context;
 };
