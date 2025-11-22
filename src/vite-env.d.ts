@@ -1,5 +1,18 @@
-// This file is used to reference environment variables and types.
-// Since we are using process.env.API_KEY directly as per guidelines,
-// we do not need the specific vite/client types for import.meta.env here.
+/// <reference types="vite/client" />
 
-export {};
+// Manually define process to prevent TS errors when using process.env.API_KEY
+declare const process: {
+  env: {
+    API_KEY: string;
+    [key: string]: any;
+  };
+};
+
+interface ImportMetaEnv {
+  readonly VITE_API_KEY: string;
+  // more env variables...
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
