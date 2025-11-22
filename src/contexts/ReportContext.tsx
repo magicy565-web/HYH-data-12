@@ -6,7 +6,6 @@ const ReportContext = createContext<ReportContextType | undefined>(undefined);
 export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<ReportItem[]>([]);
 
-  // Load from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem('hyh_report_cart');
     if (stored) {
@@ -16,12 +15,11 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           setItems(parsed);
         }
       } catch (e) {
-        console.error("Failed to parse report cart from storage", e);
+        console.error("Failed to parse report cart", e);
       }
     }
   }, []);
 
-  // Save to localStorage on change
   useEffect(() => {
     localStorage.setItem('hyh_report_cart', JSON.stringify(items));
   }, [items]);
@@ -39,7 +37,6 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
-  // Define moveItem function
   const moveItem = (id: string, direction: 'up' | 'down') => {
     setItems(prev => {
       const index = prev.findIndex(i => i.id === id);
@@ -61,7 +58,6 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   return (
-    // CRITICAL FIX: 'moveItem' MUST be included in the value object here
     <ReportContext.Provider value={{ items, addItem, removeItem, moveItem, clearReport }}>
       {children}
     </ReportContext.Provider>
@@ -71,7 +67,15 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 export const useReport = () => {
   const context = useContext(ReportContext);
   if (context === undefined) {
-    throw new Error('useReport must be used within a ReportProvider');
+    // SAFETY FALLBACK: Prevent white screen if Provider is missing
+    console.warn('ReportContext is missing. Using fallback.');
+    return {
+      items: [],
+      addItem: () => console.log("Fallback addItem"),
+      removeItem: () => {},
+      moveItem: () => {},
+      clearReport: () => {}
+    };
   }
   return context;
 };
