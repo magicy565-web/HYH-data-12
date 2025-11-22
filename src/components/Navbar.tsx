@@ -107,7 +107,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, languag
              </button>
           </div>
         </div>
-        
         <div className="md:hidden flex justify-between border-t border-slate-100 pt-2 pb-2 overflow-x-auto space-x-2 px-2 no-scrollbar">
              <button onClick={() => setActiveTab('online')} className={`flex-1 p-2 flex justify-center rounded-md transition-colors ${activeTab === 'online' ? 'text-blue-600 bg-blue-50' : 'text-slate-500'}`}><Globe className="w-5 h-5" /></button>
              <button onClick={() => setActiveTab('trade')} className={`flex-1 p-2 flex justify-center rounded-md transition-colors ${activeTab === 'trade' ? 'text-blue-600 bg-blue-50' : 'text-slate-500'}`}><BarChart3 className="w-5 h-5" /></button>
