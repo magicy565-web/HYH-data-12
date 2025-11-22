@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Globe, BarChart3, Package, Search, Languages } from 'lucide-react';
+import { Globe, BarChart3, Package, Search, Languages, ImageOff } from 'lucide-react';
 import { Language } from '../types';
 import { translations } from '../translations';
 
@@ -18,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, languag
     setLanguage(language === 'en' ? 'zh' : 'en');
   };
 
+  // NOTE: If this URL expires, please replace it with a permanent direct link to your logo.
   const logoUrl = "https://attachment.message-content.s3.amazonaws.com/20250226/081724/11a192a575a07818468266c8e5c314b2.jpg";
 
   return (
@@ -41,6 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, languag
                   }}
                 />
               ) : (
+                // Professional fallback if the image link is broken/expired
                 <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
                    <span className="text-white font-bold text-xs tracking-wider">HYH</span>
                 </div>
@@ -50,6 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, languag
               </span>
             </div>
             
+            {/* Desktop Navigation */}
             <div className="hidden md:flex md:space-x-6">
               <button
                 onClick={() => setActiveTab('online')}
@@ -108,6 +112,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, languag
           </div>
         </div>
         
+        {/* Mobile Menu (Simplified) */}
         <div className="md:hidden flex justify-between border-t border-slate-100 pt-2 pb-2 overflow-x-auto space-x-2 px-2 no-scrollbar">
              <button onClick={() => setActiveTab('online')} className={`flex-1 p-2 flex justify-center rounded-md transition-colors ${activeTab === 'online' ? 'text-blue-600 bg-blue-50' : 'text-slate-500'}`}><Globe className="w-5 h-5" /></button>
              <button onClick={() => setActiveTab('trade')} className={`flex-1 p-2 flex justify-center rounded-md transition-colors ${activeTab === 'trade' ? 'text-blue-600 bg-blue-50' : 'text-slate-500'}`}><BarChart3 className="w-5 h-5" /></button>

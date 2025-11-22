@@ -1,3 +1,4 @@
+
 import React, { useState, ChangeEvent } from 'react';
 import { Upload, X, Search, Loader2, Globe } from 'lucide-react';
 import { FormData, TargetMarket, CompanyType, Language } from '../types';
@@ -23,14 +24,15 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
   const [errors, setErrors] = useState<{ companyWebsite?: string }>({});
 
   const validateUrl = (url: string): boolean => {
-    if (!url) return true; 
+    if (!url) return true; // Allow empty as it might be optional
+    // Comprehensive regex for URL validation
     const pattern = new RegExp(
-      '^(https?:\\/\\/)?' + 
-        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + 
-        '((\\d{1,3}\\.){3}\\d{1,3}))' + 
-        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + 
-        '(\\?[;&a-z\\d%_.~+=-]*)?' + 
-        '(\\#[-a-z\\d_]*)?$', 
+      '^(https?:\\/\\/)?' + // protocol
+        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+        '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+        '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+        '(\\#[-a-z\\d_]*)?$', // fragment locator
       'i'
     );
     return !!pattern.test(url);
@@ -41,6 +43,7 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
     
     setFormData((prev) => ({ ...prev, [name]: value }));
 
+    // Real-time validation for website
     if (name === 'companyWebsite') {
       if (value && !validateUrl(value)) {
         setErrors((prev) => ({ ...prev, companyWebsite: t.websiteError }));
@@ -71,6 +74,7 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Final validation check
     if (formData.companyWebsite && !validateUrl(formData.companyWebsite)) {
       setErrors((prev) => ({ ...prev, companyWebsite: t.websiteError }));
       return;
@@ -92,6 +96,7 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
       
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Company Name */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t.companyName}</label>
             <input
@@ -105,6 +110,7 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
             />
           </div>
 
+           {/* Company Website - NEW FIELD with VALIDATION */}
            <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t.companyWebsite} <span className="text-slate-400 text-xs font-normal">{t.optional}</span></label>
             <div className="relative">
@@ -131,6 +137,7 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
             )}
           </div>
 
+          {/* Product Name */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t.productName}</label>
             <input
@@ -144,6 +151,7 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
             />
           </div>
 
+          {/* Target Market */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t.targetMarket}</label>
             <select
@@ -158,6 +166,7 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
             </select>
           </div>
 
+          {/* Company Type */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t.businessType}</label>
             <select
@@ -173,6 +182,7 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
           </div>
         </div>
 
+        {/* Image Upload */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">{t.images}</label>
           <div className="flex items-start space-x-4">
@@ -199,6 +209,7 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
               </label>
             </div>
 
+            {/* Image Previews */}
             <div className="flex space-x-4 overflow-x-auto py-1">
               {formData.images.map((file, index) => (
                 <div key={index} className="relative w-32 h-32 rounded-lg overflow-hidden border border-slate-200 shadow-sm group">
