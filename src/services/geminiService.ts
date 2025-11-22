@@ -1,12 +1,17 @@
+/// <reference types="vite/client" />
+
 import { GoogleGenAI, Part } from "@google/genai";
 import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokShopLink, TikTokCreator, TikTokDiscoveryFilters, TradeCountry, TradeResearchResult, TradeChannel, Buyer, Language, CantonFairData, BuyerSize } from "../types";
 
 // Helper to ensure API Key exists and log debug info
 const getAiClient = () => {
-  // Safe access to process.env
-  const env = (typeof process !== 'undefined' && process.env) ? process.env : {};
-  // Try import.meta.env (Vite standard) or fallback to process.env (polyfilled)
-  const apiKey = import.meta.env?.VITE_API_KEY || env.API_KEY;
+  // Safe access to process.env for fallback (node/legacy envs)
+  const processEnv = typeof process !== 'undefined' ? process.env : {};
+  
+  // Access Vite env safely. We cast import.meta to any to bypass strict TS checks if types are missing in some contexts
+  const viteEnv = (import.meta as any).env || {};
+  
+  const apiKey = viteEnv.VITE_API_KEY || processEnv.API_KEY;
   
   if (!apiKey || apiKey.length < 10) {
     console.error("[Gemini Service] CRITICAL ERROR: API Key is missing or invalid.");
