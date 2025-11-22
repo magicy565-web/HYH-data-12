@@ -22,12 +22,12 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
 
   const competitors = Array.isArray(result.competitors) ? result.competitors : [];
   
-  // Strict data validation
+  // Strict chart data validation
   const trendsData = (Array.isArray(result.chartData?.trends) ? result.chartData.trends : [])
-    .filter(item => item && typeof item.marketSize === 'number');
+    .map(item => ({...item, marketSize: Number(item.marketSize) || 0}));
 
   const sharesData = (Array.isArray(result.chartData?.shares) ? result.chartData.shares : [])
-    .filter(item => item && typeof item.share === 'number');
+    .map(item => ({...item, share: Number(item.share) || 0}));
   
   const rawSwot = result.swot || {};
   const swot = {
@@ -120,25 +120,25 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
              <div className="p-4 bg-green-50 rounded-lg border border-green-100">
                 <h4 className="font-semibold text-green-800 mb-2 text-sm">{t.strengths}</h4>
                 <ul className="list-disc list-inside text-xs text-green-900 space-y-1">
-                  {swot.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                  {swot.strengths.map((s, i) => <li key={`s-${i}`}>{s}</li>)}
                 </ul>
              </div>
              <div className="p-4 bg-red-50 rounded-lg border border-red-100">
                 <h4 className="font-semibold text-red-800 mb-2 text-sm">{t.weaknesses}</h4>
                  <ul className="list-disc list-inside text-xs text-red-900 space-y-1">
-                  {swot.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
+                  {swot.weaknesses.map((s, i) => <li key={`w-${i}`}>{s}</li>)}
                 </ul>
              </div>
              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <h4 className="font-semibold text-blue-800 mb-2 text-sm">{t.opportunities}</h4>
                  <ul className="list-disc list-inside text-xs text-blue-900 space-y-1">
-                  {swot.opportunities.map((s, i) => <li key={i}>{s}</li>)}
+                  {swot.opportunities.map((s, i) => <li key={`o-${i}`}>{s}</li>)}
                 </ul>
              </div>
              <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
                 <h4 className="font-semibold text-amber-800 mb-2 text-sm">{t.threats}</h4>
                  <ul className="list-disc list-inside text-xs text-amber-900 space-y-1">
-                  {swot.threats.map((s, i) => <li key={i}>{s}</li>)}
+                  {swot.threats.map((s, i) => <li key={`t-${i}`}>{s}</li>)}
                 </ul>
              </div>
           </div>
@@ -161,26 +161,22 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
                 language={language} 
             />
           </div>
-          <p className="text-sm text-slate-500 mb-6 h-10 line-clamp-2">{result.fiveYearTrendAnalysis || ""}</p>
+          <p className="text-sm text-slate-500 mb-6 h-10 line-clamp-2">{result.marketSummary ? result.marketSummary.substring(0, 100) + "..." : ""}</p>
           <div className="h-64 w-full">
             {trendsData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={trendsData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="year" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} label={{ value: 'Market Index', angle: -90, position: 'insideLeft', fill: '#94a3b8' }} />
+                  <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip 
-                      contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }}
-                      formatter={(value: number) => [value, 'Market Index']}
-                      labelFormatter={(label) => `Year: ${label}`}
+                     isAnimationActive={false}
+                     contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                   />
-                  <Line type="monotone" dataKey="marketSize" stroke="#2563eb" strokeWidth={3} dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="marketSize" stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-slate-400 text-sm">No trend data available.</div>
-            )}
+            ) : <div className="flex h-full items-center justify-center text-slate-400 text-sm">No trend data available.</div>}
           </div>
         </div>
 
@@ -206,28 +202,25 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
                   data={sharesData} 
                   layout="vertical" 
                   margin={{ left: 40 }}
-                  onMouseLeave={() => setHoveredBarIndex(null)}
                 >
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
                   <XAxis type="number" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} unit="%" />
                   <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={10} width={100} tickLine={false} axisLine={false} />
                   <Tooltip 
+                      isAnimationActive={false}
                       cursor={{fill: 'transparent'}}
                       contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                      formatter={(value: number) => [`${value}%`, 'Market Share']}
                   />
                   <Bar 
                     dataKey="share" 
                     radius={[0, 4, 4, 0]} 
                     barSize={20}
-                    onMouseEnter={(_, index) => setHoveredBarIndex(index)}
+                    isAnimationActive={false}
                   >
                     {sharesData.map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
                         fill={COLORS[index % COLORS.length]} 
-                        fillOpacity={hoveredBarIndex === null || hoveredBarIndex === index ? 1 : 0.3}
-                        style={{ transition: 'fill-opacity 0.3s ease' }}
                       />
                     ))}
                   </Bar>
