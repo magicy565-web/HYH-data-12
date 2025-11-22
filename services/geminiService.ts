@@ -1,19 +1,16 @@
 
 import { GoogleGenAI, Part } from "@google/genai";
-import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokShopLink, TikTokCreator, TikTokDiscoveryFilters, TradeCountry, TradeResearchResult, TradeChannel, Buyer, Language, CantonFairData } from "../types";
+import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokShopLink, TikTokCreator, TikTokDiscoveryFilters, TradeCountry, TradeResearchResult, TradeChannel, Buyer, Language, CantonFairData, BuyerSize } from "../types";
 
-// Helper to ensure API Key exists and log debug info
 const getAiClient = () => {
-  const apiKey = process.env.API_KEY;
-  
-  if (!apiKey || apiKey.length < 10) {
-    console.error("[Gemini Service] CRITICAL ERROR: API Key is missing or invalid.");
-    console.error("[Gemini Service] Current Key Value:", apiKey ? "Present (Hidden)" : "Undefined/Null");
-    // Throwing a user-friendly error that will be caught by the UI
+  // The API key is injected by Vite via define: { 'process.env.API_KEY': ... }
+  // We rely strictly on this injected global variable.
+  if (!process.env.API_KEY) {
+    console.error("[Gemini Service] API Key is missing.");
     throw new Error("API Key is missing. Please check your application configuration.");
   }
   
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 const convertFileToBase64 = (file: File): Promise<string> => {
@@ -22,7 +19,6 @@ const convertFileToBase64 = (file: File): Promise<string> => {
     reader.readAsDataURL(file);
     reader.onload = () => {
       const result = reader.result as string;
-      // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
       const base64 = result.split(',')[1];
       resolve(base64);
     };
@@ -33,7 +29,7 @@ const convertFileToBase64 = (file: File): Promise<string> => {
 export const analyzeMarket = async (formData: FormData, lang: Language): Promise<ResearchResult> => {
   const ai = getAiClient();
 
-  // Prepare image parts
+  // 1. Convert images
   const imageParts: Part[] = await Promise.all(
     formData.images.map(async (file) => {
       const base64Data = await convertFileToBase64(file);
@@ -46,41 +42,77 @@ export const analyzeMarket = async (formData: FormData, lang: Language): Promise
     })
   );
 
+  // 2. Step 1: Visual Analysis (Vision only, NO tools)
+  // Mixing Image parts and Tools (Google Search) in the same request can cause errors or refusals.
+  // We first get a text description of the product.
+  let visualDescription = "No images provided.";
+  
+  if (imageParts.length > 0) {
+    try {
+      const visionResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: {
+          parts: [
+            ...imageParts,
+            { text: "Analyze these product images. Describe the product type, design style, materials, key features, and estimated quality level in detail." }
+          ]
+        }
+      });
+      visualDescription = visionResponse.text || "Image analysis failed.";
+    } catch (error) {
+      console.warn("Vision analysis step failed:", error);
+      visualDescription = "Image analysis could not be completed. Proceeding with text details only.";
+    }
+  }
+
+  // 3. Step 2: Market Research (Text + Google Search Tool)
   const langInstruction = lang === 'zh' 
-    ? "IMPORTANT: The content of the JSON values (marketSummary, trendAnalysis, swot, competitor features, etc.) MUST be in Simplified Chinese." 
+    ? "IMPORTANT: The content of the JSON values MUST be in Simplified Chinese." 
     : "The content MUST be in English.";
 
   const promptText = `
-    Act as a Senior Market Research Analyst specializing in the ${formData.market} market.
+    Act as a Chief Marketing Officer (CMO) and Senior Market Strategist specializing in the ${formData.market} market.
     
-    My Company: ${formData.companyName} (${formData.companyType})
-    ${formData.companyWebsite ? `Website: ${formData.companyWebsite}` : ''}
-    Product: ${formData.productName}
-    
-    Task:
-    1. Analyze the attached product images and the product details.
-    2. Use Google Search to find the TOP 5 real competing products currently listed on Google Shopping or major e-commerce sites in the ${formData.market}. Focus on products that look visually similar or serve the same function.
-    3. Analyze the market trends for this product category over the last 5 years (2020-2024) and project 2025.
-    4. Perform a SWOT analysis for launching my product in this market.
-    5. Estimate the market share of the top 5 competitors found.
+    **Visual Context (from product images):**
+    ${visualDescription}
 
-    Output Requirement:
-    You MUST return a valid JSON object wrapped in \`\`\`json code blocks. 
+    **Client Profile:**
+    - **Company:** ${formData.companyName} (${formData.companyType})
+    - **Website:** ${formData.companyWebsite || "N/A"}
+    - **Product Name:** ${formData.productName}
+    - **Target Audience:** ${formData.targetAudience || "General Consumers"}
+    - **Key Selling Points (USPs):** ${formData.usps || "Standard market features"}
+    - **Price Positioning:** ${formData.priceRange || "Market Standard"}
+    
+    **Objective:**
+    Create a comprehensive Go-to-Market strategy. 
+    Use **Google Search** to find REAL-TIME data on competitors, pricing, and trends.
+
+    **Tasks:**
+    1. **Competitor Reconnaissance:** Find 5 *actual* top competitors selling similar products on Amazon, Google Shopping, or major retailers in ${formData.market}. Get their *current* selling prices and key features.
+    2. **Strategic Deep Dive:**
+       - **Consumer Sentiment:** What do people typically love/hate about this product category?
+       - **Marketing Channels:** Where does the target audience hang out?
+       - **Pricing Strategy:** Based on the competitors, where should this product be priced?
+       - **6-Month Action Plan:** Bullet points for a launch roadmap.
+    3. **Data Analysis:** Estimate a 5-year trend (2020-2025) and current market share distribution.
+
+    **Output Requirement:**
+    Return a VALID JSON object. Do not include markdown formatting outside the JSON.
     ${langInstruction}
     
-    The structure must strictly match this schema:
-
+    Schema:
     {
-      "marketSummary": "A comprehensive paragraph summarizing the 5-year market changes, potential opportunities, and the general landscape.",
-      "fiveYearTrendAnalysis": "Detailed text explaining the specific trends observed in the graph.",
+      "marketSummary": "Executive summary of the market opportunity (approx 100 words).",
+      "fiveYearTrendAnalysis": "Analysis of search/market trends from 2020-2025.",
       "swot": {
-        "strengths": ["point 1", "point 2"],
-        "weaknesses": ["point 1", "point 2"],
-        "opportunities": ["point 1", "point 2"],
-        "threats": ["point 1", "point 2"]
+        "strengths": ["..."],
+        "weaknesses": ["..."],
+        "opportunities": ["..."],
+        "threats": ["..."]
       },
       "competitors": [
-        { "name": "Product Name - Brand", "features": "Key features summary", "price": "Price found", "website": "Link URL found via search" }
+        { "name": "Brand - Product Name", "features": "Key features", "price": "Current Price", "website": "URL" }
       ],
       "chartData": {
         "trends": [
@@ -94,47 +126,45 @@ export const analyzeMarket = async (formData: FormData, lang: Language): Promise
         "shares": [
           { "name": "Competitor A", "share": 30 },
           { "name": "Competitor B", "share": 25 },
-          { "name": "Competitor C", "share": 20 },
-          { "name": "Competitor D", "share": 15 },
-          { "name": "Others", "share": 10 }
+          { "name": "Your Brand (Projected)", "share": 5 },
+          { "name": "Others", "share": 40 }
         ]
-      }
+      },
+      "consumerSentiment": "Summary of values and pain points.",
+      "marketingChannels": ["Channel 1", "Channel 2"],
+      "pricingStrategy": "Specific advice on pricing.",
+      "actionPlan": ["Month 1: ...", "Month 2-3: ..."]
     }
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash', // Using flash for speed and grounding capability
+      model: 'gemini-2.5-flash',
       contents: {
         parts: [
-          ...imageParts,
           { text: promptText }
         ]
       },
       config: {
-        tools: [{ googleSearch: {} }], // Enable Grounding
+        tools: [{ googleSearch: {} }],
       }
     });
 
     const text = response.text || "";
-    
-    // Extract JSON from code blocks if present
     const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/```\n([\s\S]*?)\n```/);
     let parsedData: any;
 
     if (jsonMatch && jsonMatch[1]) {
       parsedData = JSON.parse(jsonMatch[1]);
     } else {
-      // Attempt to parse the raw text if it looks like JSON
       try {
         parsedData = JSON.parse(text);
       } catch (e) {
         console.error("Failed to parse JSON response", e);
-        throw new Error("The analysis failed to produce structured data. Please try again with a clear image.");
+        throw new Error("The analysis failed to produce structured data. Please try again.");
       }
     }
 
-    // Extract Grounding Metadata Links if available
     const rawSearchLinks: string[] = [];
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     if (chunks) {
@@ -143,8 +173,30 @@ export const analyzeMarket = async (formData: FormData, lang: Language): Promise
         });
     }
 
+    // Sanitization
+    const sanitizedTrends = (parsedData.chartData?.trends || []).map((t: any) => ({
+      ...t,
+      marketSize: Number(t.marketSize) || 0
+    }));
+
+    const sanitizedShares = (parsedData.chartData?.shares || []).map((s: any) => ({
+      ...s,
+      share: Number(s.share) || 0
+    }));
+
     return {
-      ...parsedData,
+      marketSummary: parsedData.marketSummary || "",
+      fiveYearTrendAnalysis: parsedData.fiveYearTrendAnalysis || "",
+      swot: parsedData.swot || { strengths: [], weaknesses: [], opportunities: [], threats: [] },
+      competitors: parsedData.competitors || [],
+      chartData: {
+        trends: sanitizedTrends,
+        shares: sanitizedShares
+      },
+      consumerSentiment: parsedData.consumerSentiment || "Analysis not available.",
+      marketingChannels: parsedData.marketingChannels || [],
+      pricingStrategy: parsedData.pricingStrategy || "Analysis not available.",
+      actionPlan: parsedData.actionPlan || [],
       rawSearchLinks
     };
 
@@ -207,7 +259,6 @@ export const calculateLogistics = async (data: LogisticsFormData, lang: Language
       if (jsonMatch && jsonMatch[1]) {
         return JSON.parse(jsonMatch[1]);
       } else {
-        // Fallback: try to parse raw text if clean
         try {
           return JSON.parse(text);
         } catch (e) {
@@ -405,7 +456,7 @@ export const analyzeTradeMarket = async (country: TradeCountry, niche: string, l
   }
 };
 
-export const findTradeBuyers = async (country: TradeCountry, channel: TradeChannel, niche: string, lang: Language): Promise<Buyer[]> => {
+export const findTradeBuyers = async (country: TradeCountry, channel: TradeChannel, niche: string, size: BuyerSize, distChannels: string, lang: Language): Promise<Buyer[]> => {
   const ai = getAiClient();
 
   const langInstruction = lang === 'zh' 
@@ -418,6 +469,8 @@ export const findTradeBuyers = async (country: TradeCountry, channel: TradeChann
     Target Country: ${country}
     Target Channel: ${channel}
     Product Category: "${niche}"
+    Target Buyer Size: ${size}
+    Existing Distribution: ${distChannels}
 
     Task:
     Find 5-10 specific potential buyers, retailers, or distributor companies in ${country} that operate in the ${channel} sector and would likely stock ${niche}.
