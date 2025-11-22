@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { ShoppingCart, X, Trash2, FileDown, ChevronDown } from 'lucide-react';
+import { ShoppingCart, X, Trash2, FileDown, ChevronUp, ChevronDown, Move } from 'lucide-react';
 import { useReport } from '../contexts/ReportContext';
 import { Language } from '../types';
 import { translations } from '../translations';
@@ -11,7 +10,7 @@ interface Props {
 }
 
 export const ReportBuilder: React.FC<Props> = ({ language }) => {
-  const { items, removeItem } = useReport();
+  const { items, removeItem, moveItem } = useReport();
   const [isOpen, setIsOpen] = useState(false);
   const t = translations[language].report;
 
@@ -64,7 +63,7 @@ export const ReportBuilder: React.FC<Props> = ({ language }) => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end">
       {isOpen && (
         <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-80 sm:w-96 mb-4 overflow-hidden flex flex-col animate-fade-in-up max-h-[500px]">
           <div className="bg-blue-600 p-4 flex justify-between items-center">
@@ -74,16 +73,34 @@ export const ReportBuilder: React.FC<Props> = ({ language }) => {
              </h3>
              <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
             {items.length === 0 && <div className="text-center text-slate-400 py-8 text-sm">{t.empty}</div>}
-            {items.map((item) => (
+            {items.map((item, idx) => (
                 <div key={item.id} className="bg-slate-50 p-3 rounded-lg border border-slate-100 group relative hover:border-blue-200 transition-colors">
-                    <div className="flex justify-between items-start">
-                        <div>
+                    <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
                             <span className="text-[10px] uppercase font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded tracking-wider mb-1 inline-block">{t.type[item.type]}</span>
                             <h4 className="text-sm font-medium text-slate-800 line-clamp-1">{item.title}</h4>
                         </div>
-                        <button onClick={() => removeItem(item.id)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"><Trash2 className="w-4 h-4" /></button>
+                        <div className="flex items-center gap-1">
+                            <div className="flex flex-col gap-0.5">
+                                <button 
+                                    onClick={() => moveItem(item.id, 'up')}
+                                    disabled={idx === 0}
+                                    className="text-slate-300 hover:text-blue-600 disabled:opacity-0 p-0.5"
+                                >
+                                    <ChevronUp className="w-3 h-3" />
+                                </button>
+                                <button 
+                                    onClick={() => moveItem(item.id, 'down')}
+                                    disabled={idx === items.length - 1}
+                                    className="text-slate-300 hover:text-blue-600 disabled:opacity-0 p-0.5"
+                                >
+                                    <ChevronDown className="w-3 h-3" />
+                                </button>
+                            </div>
+                            <button onClick={() => removeItem(item.id)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"><Trash2 className="w-4 h-4" /></button>
+                        </div>
                     </div>
                     {item.comment && <p className="text-xs text-slate-500 mt-1 italic border-l-2 border-slate-200 pl-2 line-clamp-2">{item.comment}</p>}
                 </div>
@@ -94,7 +111,10 @@ export const ReportBuilder: React.FC<Props> = ({ language }) => {
           </div>
         </div>
       )}
-      <button onClick={() => setIsOpen(!isOpen)} className="bg-blue-600 text-white p-3.5 rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-105 flex items-center justify-center relative">
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="bg-blue-600 text-white p-3.5 rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-105 flex items-center justify-center relative"
+      >
         {isOpen ? <ChevronDown className="w-6 h-6" /> : <ShoppingCart className="w-6 h-6" />}
         {items.length > 0 && !isOpen && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
