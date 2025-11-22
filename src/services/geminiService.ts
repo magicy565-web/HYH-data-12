@@ -3,21 +3,24 @@ import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokSho
 
 // Helper to ensure API Key exists and log debug info
 const getAiClient = () => {
-  // 1. Try Vite standard env first
-  let apiKey = import.meta.env.VITE_API_KEY;
-
-  // 2. Fallback to process.env (polyfilled by vite.config.ts) if import.meta fails
-  if (!apiKey && typeof process !== 'undefined' && process.env) {
-    apiKey = process.env.API_KEY;
-  }
-
-  if (!apiKey || apiKey.length < 10) {
+  // 1. Safe access to process.env (prevents ReferenceError in browser)
+  const safeProcess = typeof process !== 'undefined' ? process : { env: {} as any };
+  
+  // 2. Prioritize Vite standard import.meta.env, fallback to process.env
+  // We use 'as any' to avoid TypeScript complaining if types aren't perfectly set up
+  const viteKey = (import.meta as any).env?.VITE_API_KEY;
+  const processKey = safeProcess.env?.API_KEY;
+  
+  const apiKey = viteKey || processKey;
+  
+  if (!apiKey || typeof apiKey !== 'string' || apiKey.length < 10) {
     console.error("[Gemini Service] CRITICAL ERROR: API Key is missing or invalid.");
-    // Return a dummy client or throw helpful error
-    throw new Error("API Key is missing. Please check Vercel Settings -> Environment Variables -> VITE_API_KEY.");
+    console.log("Debug Info - Vite Key Exists:", !!viteKey);
+    console.log("Debug Info - Process Key Exists:", !!processKey);
+    throw new Error("API Key is missing. Please check your Vercel Environment Variables (VITE_API_KEY).");
   }
   
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({ apiKey: apiKey as string });
 };
 
 const convertFileToBase64 = (file: File): Promise<string> => {
@@ -141,6 +144,7 @@ export const analyzeMarket = async (formData: FormData, lang: Language): Promise
         });
     }
 
+    // Return safe structure
     return {
       marketSummary: parsedData.marketSummary || "",
       fiveYearTrendAnalysis: parsedData.fiveYearTrendAnalysis || "",
@@ -158,31 +162,23 @@ export const analyzeMarket = async (formData: FormData, lang: Language): Promise
 
 export const calculateLogistics = async (data: LogisticsFormData, lang: Language): Promise<LogisticsResult> => {
     const ai = getAiClient();
-  
-    const langInstruction = lang === 'zh' 
-      ? "Respond in Simplified Chinese. (Currency can remain in USD)." 
-      : "Respond in English.";
-
+    const langInstruction = lang === 'zh' ? "Respond in Simplified Chinese. (Currency can remain in USD)." : "Respond in English.";
     const promptText = `
       Act as a Logistics Expert for international trade.
-      
       Product Dimensions: Length ${data.length}cm, Width ${data.width}cm, Height ${data.height}cm.
       ${data.weight ? `Product Weight: ${data.weight}kg.` : ''}
       ${data.unitsPerCbm ? `Units per CBM: ${data.unitsPerCbm}.` : ''}
       Target Market: ${data.market}.
       Origin: Assume shipment from a major port in China (e.g., Shenzhen/Shanghai) to ${data.market}.
-  
       Task:
       1. Calculate the Volumetric Weight.
       2. Estimate current SEA FREIGHT costs (LCL). Provide a cost range per CBM and an estimated cost per unit.
       3. Estimate current AIR FREIGHT costs. Provide a cost range per KG and an estimated cost per unit.
       4. Provide professional logistics advice for this product type (e.g. packaging tips to save volume, incoterms advice).
       5. Use Google Search to recommend 1-2 popular and reputable Overseas Warehouses (3PL) in ${data.market} (names only).
-  
       Output Requirement:
       You MUST return a valid JSON object wrapped in \`\`\`json code blocks.
       ${langInstruction}
-
       Structure:
       {
         "seaFreightCost": { "perCbm": "$X - $Y USD", "perUnit": "$A - $B USD" },
@@ -191,32 +187,16 @@ export const calculateLogistics = async (data: LogisticsFormData, lang: Language
         "warehouses": ["Warehouse Name 1", "Warehouse Name 2"]
       }
     `;
-  
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: {
-          parts: [{ text: promptText }]
-        },
-        config: {
-          tools: [{ googleSearch: {} }], // Enable Grounding to find warehouses
-        }
+        contents: { parts: [{ text: promptText }] },
+        config: { tools: [{ googleSearch: {} }] }
       });
-  
       const text = response.text || "";
       const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/```\n([\s\S]*?)\n```/);
-      
-      if (jsonMatch && jsonMatch[1]) {
-        return JSON.parse(jsonMatch[1]);
-      } else {
-        // Fallback: try to parse raw text if clean
-        try {
-          return JSON.parse(text);
-        } catch (e) {
-          console.error("Failed to parse Logistics JSON", e);
-           throw new Error("Failed to generate logistics calculation.");
-        }
-      }
+      if (jsonMatch && jsonMatch[1]) return JSON.parse(jsonMatch[1]);
+      else try { return JSON.parse(text); } catch (e) { throw new Error("Failed to generate logistics calculation."); }
     } catch (error) {
       console.error("Gemini Logistics API Error:", error);
       throw error;
@@ -225,303 +205,72 @@ export const calculateLogistics = async (data: LogisticsFormData, lang: Language
 
 export const searchTikTokShop = async (shopName: string): Promise<TikTokShopLink[]> => {
   const ai = getAiClient();
-
-  const promptText = `
-    Act as a Social Media Researcher.
-    
-    Target: Find TikTok content for the brand or shop "${shopName}".
-
-    Instructions:
-    1. Perform a Google Search using the STRICT query: site:tiktok.com ${shopName}
-    2. This is required to filter out official websites and only see TikTok pages.
-    3. Look for the official account (e.g. @${shopName.replace(/\s/g, '')}) and popular videos.
-    
-    Return the list of TikTok URLs found.
-  `;
-
+  const promptText = `Act as a Social Media Researcher. Target: Find TikTok content for the brand or shop "${shopName}". Instructions: 1. Search Google using: site:tiktok.com ${shopName} 2. Return TikTok URLs.`;
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: { parts: [{ text: promptText }] },
-      config: {
-        tools: [{ googleSearch: {} }],
-      }
+      config: { tools: [{ googleSearch: {} }] }
     });
-
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     const links: TikTokShopLink[] = [];
-
-    if (chunks) {
-      chunks.forEach((chunk: any) => {
-        if (chunk.web?.uri) {
-          if (chunk.web.uri.toLowerCase().includes('tiktok.com')) {
-              links.push({
-                title: chunk.web.title || "TikTok Result",
-                url: chunk.web.uri
-              });
-          }
-        }
-      });
-    }
-
+    if (chunks) chunks.forEach((chunk: any) => { if (chunk.web?.uri && chunk.web.uri.toLowerCase().includes('tiktok.com')) links.push({ title: chunk.web.title || "TikTok Result", url: chunk.web.uri }); });
     const uniqueLinks = Array.from(new Map(links.map(item => [item.url, item])).values());
-
-    const sortedLinks = uniqueLinks.sort((a, b) => {
-        const aIsProfile = a.url.includes('/@') && !a.url.includes('/video/');
-        const bIsProfile = b.url.includes('/@') && !b.url.includes('/video/');
-        
-        if (aIsProfile && !bIsProfile) return -1;
-        if (!aIsProfile && bIsProfile) return 1;
-        return 0;
-    });
-
-    return sortedLinks.slice(0, 20); 
-
-  } catch (error) {
-    console.error("TikTok Search API Error:", error);
-    throw error;
-  }
+    return uniqueLinks.slice(0, 20); 
+  } catch (error) { console.error("TikTok Search API Error:", error); throw error; }
 };
 
 export const discoverTikTokCreators = async (filters: TikTokDiscoveryFilters, lang: Language): Promise<TikTokCreator[]> => {
   const ai = getAiClient();
-
-  const langInstruction = lang === 'zh' 
-  ? "Respond in Simplified Chinese (except for handle)." 
-  : "Respond in English.";
-
-  const promptText = `
-    Act as a Social Media Scout.
-    
-    Find 5-10 TikTok creators/influencers in the "${filters.topic}" niche/category.
-    
-    They must match these criteria:
-    - Average Video Views: ${filters.views}
-    - Follower Count: ${filters.followers}
-
-    Use Google Search to verify they exist and fit the description.
-    
-    Output Requirement:
-    Return a JSON object wrapped in \`\`\`json code blocks.
-    ${langInstruction}
-
-    Structure:
-    [
-      { "handle": "@username", "name": "Creator Name", "followers": "e.g. 12.5K", "avgViews": "e.g. 20K", "description": "Short description of their content" }
-    ]
-  `;
-
+  const langInstruction = lang === 'zh' ? "Respond in Simplified Chinese (except for handle)." : "Respond in English.";
+  const promptText = `Act as a Social Media Scout. Find 5-10 TikTok creators in "${filters.topic}" niche. Criteria: Views ${filters.views}, Followers ${filters.followers}. Output JSON: [{ "handle": "@username", "name": "Creator Name", "followers": "12.5K", "avgViews": "20K", "description": "desc" }] ${langInstruction}`;
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: { parts: [{ text: promptText }] },
-      config: {
-        tools: [{ googleSearch: {} }],
-      }
+      config: { tools: [{ googleSearch: {} }] }
     });
-
     const text = response.text || "";
     const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/```\n([\s\S]*?)\n```/);
-    
-    if (jsonMatch && jsonMatch[1]) {
-      return JSON.parse(jsonMatch[1]);
-    } else {
-        try {
-            return JSON.parse(text);
-        } catch(e) {
-             return [];
-        }
-    }
-
-  } catch (error) {
-    console.error("TikTok Discover API Error:", error);
-    throw error;
-  }
+    if (jsonMatch && jsonMatch[1]) return JSON.parse(jsonMatch[1]);
+    else try { return JSON.parse(text); } catch(e) { return []; }
+  } catch (error) { console.error("TikTok Discover API Error:", error); throw error; }
 };
 
 export const analyzeTradeMarket = async (country: TradeCountry, niche: string, lang: Language): Promise<TradeResearchResult> => {
   const ai = getAiClient();
-
-  const langInstruction = lang === 'zh' 
-    ? "Respond in Simplified Chinese." 
-    : "Respond in English.";
-
-  const promptText = `
-    Act as an International Trade Consultant specializing in offline/physical retail markets.
-
-    Target Market: ${country}
-    Niche/Product Category: "${niche}"
-
-    Task:
-    Evaluate the potential of this niche in the OFFLINE (Brick and Mortar) market of the target country.
-    Provide scores from 1 to 10 for the following metrics:
-    1. Offline Market Match (How well does this product fit physical retail in this country?)
-    2. Offline Market Demand (How high is the consumer demand in physical stores?)
-    3. Offline Market Development/Maturity (How developed is the supply chain/retail infrastructure for this niche? 10 = Highly developed/Easy to enter, 1 = Underdeveloped/Difficult).
-
-    Output Requirement:
-    Return a JSON object wrapped in \`\`\`json code blocks.
-    ${langInstruction}
-
-    Structure:
-    {
-      "matchScore": number (1-10),
-      "demandScore": number (1-10),
-      "developmentScore": number (1-10),
-      "reasoning": "A brief explanation (max 50 words) of why these scores were given."
-    }
-  `;
-
+  const langInstruction = lang === 'zh' ? "Respond in Simplified Chinese." : "Respond in English.";
+  const promptText = `Act as an International Trade Consultant. Target: ${country}, Niche: "${niche}". Evaluate OFFLINE market. Scores 1-10: Match, Demand, Development. Output JSON: { "matchScore": 5, "demandScore": 5, "developmentScore": 5, "reasoning": "..." } ${langInstruction}`;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: { parts: [{ text: promptText }] },
-    });
-
+    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts: [{ text: promptText }] } });
     const text = response.text || "";
     const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/```\n([\s\S]*?)\n```/);
-    
     let result: any;
-    if (jsonMatch && jsonMatch[1]) {
-       result = JSON.parse(jsonMatch[1]);
-    } else {
-       try {
-         result = JSON.parse(text);
-       } catch(e) {
-         console.error("Parsing failed, using default", e);
-         throw new Error("Failed to analyze trade market.");
-       }
-    }
-
-    // Calculate average
+    if (jsonMatch && jsonMatch[1]) result = JSON.parse(jsonMatch[1]);
+    else try { result = JSON.parse(text); } catch(e) { throw new Error("Failed to analyze trade market."); }
     const average = (result.matchScore + result.demandScore + result.developmentScore) / 3;
-
-    return {
-        ...result,
-        averageScore: parseFloat(average.toFixed(1))
-    };
-
-  } catch (error) {
-    console.error("Trade Research API Error:", error);
-    throw error;
-  }
+    return { ...result, averageScore: parseFloat(average.toFixed(1)) };
+  } catch (error) { console.error("Trade Research API Error:", error); throw error; }
 };
 
-export const findTradeBuyers = async (
-  country: TradeCountry, 
-  channel: TradeChannel, 
-  niche: string, 
-  size: BuyerSize,
-  distChannels: string,
-  lang: Language
-): Promise<Buyer[]> => {
+export const findTradeBuyers = async (country: TradeCountry, channel: TradeChannel, niche: string, size: BuyerSize, distChannels: string, lang: Language): Promise<Buyer[]> => {
   const ai = getAiClient();
-
-  const langInstruction = lang === 'zh' 
-    ? "Respond in Simplified Chinese." 
-    : "Respond in English.";
-
-  const sizeInstruction = size !== 'Any' ? `Target Buyer Size: ${size}.` : '';
-  const distInstruction = distChannels ? `Preferred Existing Distribution Channels: ${distChannels}.` : '';
-
-  const promptText = `
-    Act as a B2B Sales Director.
-    
-    Target Country: ${country}
-    Target Channel: ${channel}
-    Product Category: "${niche}"
-    ${sizeInstruction}
-    ${distInstruction}
-
-    Task:
-    Find 5-10 specific potential buyers, retailers, or distributor companies in ${country} that operate in the ${channel} sector and would likely stock ${niche}.
-    
-    Instructions:
-    1. Use Google Search to find REAL existing companies.
-    2. Focus on major chains or prominent players in that specific channel.
-    3. For example, if channel is 'Supermarket' in 'UK', look for Tesco, Sainsbury's, etc. if relevant to the product.
-    4. If channel is 'Vending Machine', look for vending machine operators or distributors.
-
-    Output Requirement:
-    Return a JSON object wrapped in \`\`\`json code blocks.
-    ${langInstruction}
-    
-    Structure:
-    [
-      { 
-        "name": "Company Name", 
-        "type": "e.g. Supermarket Chain / Distributor", 
-        "description": "Brief description of who they are and why they are a match.",
-        "website": "Website URL if found"
-      }
-    ]
-  `;
-
+  const langInstruction = lang === 'zh' ? "Respond in Simplified Chinese." : "Respond in English.";
+  const promptText = `Act as B2B Sales Director. Country: ${country}, Channel: ${channel}, Product: "${niche}", Size: ${size}, Dist: ${distChannels}. Find 5-10 buyers. Output JSON: [{ "name": "Co Name", "type": "Type", "description": "Desc", "website": "URL" }] ${langInstruction}`;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: { parts: [{ text: promptText }] },
-      config: {
-        tools: [{ googleSearch: {} }],
-      }
-    });
-
+    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts: [{ text: promptText }] }, config: { tools: [{ googleSearch: {} }] } });
     const text = response.text || "";
     const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/```\n([\s\S]*?)\n```/);
-    
-    if (jsonMatch && jsonMatch[1]) {
-      return JSON.parse(jsonMatch[1]);
-    } else {
-       try {
-         return JSON.parse(text);
-       } catch(e) {
-         return [];
-       }
-    }
-
-  } catch (error) {
-    console.error("Find Trade Buyers API Error:", error);
-    throw error;
-  }
+    if (jsonMatch && jsonMatch[1]) return JSON.parse(jsonMatch[1]);
+    else try { return JSON.parse(text); } catch(e) { return []; }
+  } catch (error) { console.error("Find Trade Buyers API Error:", error); throw error; }
 };
 
 export const searchCantonFairDatabase = async (country: string, product: string, year: string): Promise<CantonFairData[]> => {
   await new Promise(resolve => setTimeout(resolve, 1200));
-  
   const mockData: CantonFairData[] = [
-    {
-      id: 1,
-      buyerName: `Global ${product} Imports Ltd`,
-      country: country === 'United Kingdom' ? 'United Kingdom' : 'United States',
-      products: `${product}, General Merchandise`,
-      contactInfo: "purchasing@globalimports.example.com",
-      sessionDate: `${year} Spring`
-    },
-    {
-      id: 2,
-      buyerName: `${country === 'United Kingdom' ? 'London' : 'New York'} Retail Group`,
-      country: country === 'United Kingdom' ? 'United Kingdom' : 'United States',
-      products: `Home Goods, ${product}`,
-      contactInfo: "info@retailgroup.example.com",
-      sessionDate: `${year} Autumn`
-    },
-    {
-      id: 3,
-      buyerName: "Apex Sourcing Solutions",
-      country: country === 'United Kingdom' ? 'United Kingdom' : 'United States',
-      products: `${product}, Electronics`,
-      contactInfo: "agents@apexsourcing.example.com",
-      sessionDate: `${year} Spring`
-    },
-    {
-        id: 4,
-        buyerName: "Direct Trade Partners",
-        country: country === 'United Kingdom' ? 'United Kingdom' : 'United States',
-        products: `Textiles, ${product}`,
-        contactInfo: "contact@directtrade.example.com",
-        sessionDate: `${year} Autumn`
-    }
+    { id: 1, buyerName: `Global ${product} Imports Ltd`, country: country, products: `${product}, General`, contactInfo: "purchasing@global.example.com", sessionDate: `${year} Spring` },
+    { id: 2, buyerName: `Retail Group ${country}`, country: country, products: `Home, ${product}`, contactInfo: "info@retail.example.com", sessionDate: `${year} Autumn` }
   ];
-
   return mockData;
 };
