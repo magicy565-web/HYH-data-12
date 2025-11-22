@@ -3,7 +3,10 @@ import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokSho
 
 // Helper to ensure API Key exists and log debug info
 const getAiClient = () => {
-  const apiKey = process.env.API_KEY;
+  // Safe access to process.env
+  const env = (typeof process !== 'undefined' && process.env) ? process.env : {};
+  // Try import.meta.env (Vite standard) or fallback to process.env (polyfilled)
+  const apiKey = import.meta.env?.VITE_API_KEY || env.API_KEY;
   
   if (!apiKey || apiKey.length < 10) {
     console.error("[Gemini Service] CRITICAL ERROR: API Key is missing or invalid.");
