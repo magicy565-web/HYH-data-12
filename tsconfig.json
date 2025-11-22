@@ -20,7 +20,12 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "types": ["node"],
-    "baseUrl": "."
+    
+    /* Path Resolution - CRITICAL FIX */
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts"]
