@@ -38,9 +38,7 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
     setFormData((prev) => ({ ...prev, [name]: value }));
-
     if (name === 'companyWebsite') {
       if (value && !validateUrl(value)) {
         setErrors((prev) => ({ ...prev, companyWebsite: t.websiteError }));
@@ -70,12 +68,10 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (formData.companyWebsite && !validateUrl(formData.companyWebsite)) {
       setErrors((prev) => ({ ...prev, companyWebsite: t.websiteError }));
       return;
     }
-
     if (formData.images.length === 0) {
         alert("Please upload at least one product image.");
         return;
@@ -89,7 +85,6 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
         <h2 className="text-lg font-semibold text-slate-900">{t.title}</h2>
         <p className="text-sm text-slate-600 mt-1">{t.subtitle}</p>
       </div>
-      
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -104,7 +99,6 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
               placeholder="e.g. Global Tech Solutions"
             />
           </div>
-
            <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t.companyWebsite} <span className="text-slate-400 text-xs font-normal">{t.optional}</span></label>
             <div className="relative">
@@ -130,7 +124,6 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
               <p className="mt-1 text-xs text-red-500">{errors.companyWebsite}</p>
             )}
           </div>
-
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t.productName}</label>
             <input
@@ -143,7 +136,6 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
               placeholder={t.productPlaceholder}
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t.targetMarket}</label>
             <select
@@ -157,7 +149,6 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
               ))}
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t.businessType}</label>
             <select
@@ -172,7 +163,6 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
             </select>
           </div>
         </div>
-
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">{t.images}</label>
           <div className="flex items-start space-x-4">
@@ -198,7 +188,6 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
                 <span className="text-xs text-slate-500">{t.upload}</span>
               </label>
             </div>
-
             <div className="flex space-x-4 overflow-x-auto py-1">
               {formData.images.map((file, index) => (
                 <div key={index} className="relative w-32 h-32 rounded-lg overflow-hidden border border-slate-200 shadow-sm group">
@@ -219,7 +208,6 @@ export const OnlineResearchForm: React.FC<Props> = ({ onSubmit, isLoading, langu
             </div>
           </div>
         </div>
-
         <div className="pt-4 border-t border-slate-100 flex justify-end">
           <button
             type="submit"
