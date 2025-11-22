@@ -16,6 +16,10 @@ export interface FormData {
   market: TargetMarket;
   productName: string;
   companyType: CompanyType;
+  // New Strategic Fields
+  targetAudience?: string;
+  usps?: string; // Unique Selling Points
+  priceRange?: string;
   images: File[];
 }
 
@@ -52,6 +56,11 @@ export interface ResearchResult {
     trends: MarketTrendData[];
     shares: CompetitorShareData[];
   };
+  // New Strategic Outputs
+  consumerSentiment: string;
+  marketingChannels: string[];
+  pricingStrategy: string;
+  actionPlan: string[];
   rawSearchLinks?: string[];
 }
 
@@ -134,8 +143,8 @@ export interface CantonFairData {
   buyerName: string;
   country: string;
   products: string;
-  contactInfo: string; // simulated email/phone
-  sessionDate: string; // Spring or Autumn
+  contactInfo: string; 
+  sessionDate: string;
 }
 
 export type Language = 'en' | 'zh';
@@ -149,12 +158,15 @@ export interface ReportItem {
   title: string;
   comment?: string;
   timestamp: number;
-  data: any; // Raw data payload (JSON)
+  data: any; 
 }
 
 export interface ReportContextType {
   items: ReportItem[];
   addItem: (item: Omit<ReportItem, 'id' | 'timestamp'>) => void;
   removeItem: (id: string) => void;
+  moveItem: (id: string, direction: 'up' | 'down') => void;
   clearReport: () => void;
 }
+
+export type BuyerSize = 'Small' | 'Medium' | 'Large' | 'Any';

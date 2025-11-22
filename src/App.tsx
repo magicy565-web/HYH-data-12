@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// Ensure these import paths are exactly matching your file structure
 import { Navbar } from './components/Navbar';
 import { OnlineResearchForm } from './components/OnlineResearchForm';
 import { ResultsView } from './components/ResultsView';

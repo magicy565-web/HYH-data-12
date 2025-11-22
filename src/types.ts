@@ -1,3 +1,4 @@
+
 export enum TargetMarket {
   UK = 'United Kingdom',
   US = 'United States'
@@ -16,6 +17,10 @@ export interface FormData {
   productName: string;
   companyType: CompanyType;
   images: File[];
+  // New Strategic Fields
+  targetAudience?: string;
+  usps?: string; // Unique Selling Points
+  priceRange?: string;
 }
 
 export interface Competitor {
@@ -52,6 +57,11 @@ export interface ResearchResult {
     shares: CompetitorShareData[];
   };
   rawSearchLinks?: string[];
+  // New Strategic Outputs
+  consumerSentiment: string;
+  marketingChannels: string[];
+  pricingStrategy: string;
+  actionPlan: string[];
 }
 
 export interface LogisticsFormData {

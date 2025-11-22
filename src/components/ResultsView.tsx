@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo } from 'react';
 import { ResearchResult, FormData, Language } from '../types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, Legend } from 'recharts';
-import { TrendingUp, AlertCircle, Target, Shield, ArrowUpRight, ExternalLink } from 'lucide-react';
+import { TrendingUp, AlertCircle, Target, Shield, ExternalLink, Heart, Megaphone, DollarSign, ListChecks } from 'lucide-react';
 import { translations } from '../translations';
 import { AddToReportButton } from './AddToReportButton';
 
@@ -13,7 +14,7 @@ interface Props {
 
 const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e'];
 
-// Custom Tooltip to avoid Recharts internal DOM issues
+// Custom Tooltip
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -33,228 +34,183 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
 
   if (!result) return null;
 
+  // Safe Data Access
   const competitors = Array.isArray(result.competitors) ? result.competitors : [];
+  const trendsData = useMemo(() => (Array.isArray(result.chartData?.trends) ? result.chartData.trends : []).map(i => ({...i, marketSize: Number(i.marketSize)||0})), [result.chartData]);
+  const sharesData = useMemo(() => (Array.isArray(result.chartData?.shares) ? result.chartData.shares : []).map(i => ({...i, share: Number(i.share)||0})), [result.chartData]);
   
-  // Memoize data to prevent unnecessary re-renders
-  const trendsData = useMemo(() => 
-    (Array.isArray(result.chartData?.trends) ? result.chartData.trends : [])
-    .map(item => ({...item, marketSize: Number(item.marketSize) || 0})),
-  [result.chartData?.trends]);
-
-  const sharesData = useMemo(() => 
-    (Array.isArray(result.chartData?.shares) ? result.chartData.shares : [])
-    .map(item => ({...item, share: Number(item.share) || 0})),
-  [result.chartData?.shares]);
-  
-  const rawSwot = result.swot || {};
   const swot = {
-    strengths: Array.isArray(rawSwot.strengths) ? rawSwot.strengths : [],
-    weaknesses: Array.isArray(rawSwot.weaknesses) ? rawSwot.weaknesses : [],
-    opportunities: Array.isArray(rawSwot.opportunities) ? rawSwot.opportunities : [],
-    threats: Array.isArray(rawSwot.threats) ? rawSwot.threats : [],
+    strengths: Array.isArray(result.swot?.strengths) ? result.swot.strengths : [],
+    weaknesses: Array.isArray(result.swot?.weaknesses) ? result.swot.weaknesses : [],
+    opportunities: Array.isArray(result.swot?.opportunities) ? result.swot.opportunities : [],
+    threats: Array.isArray(result.swot?.threats) ? result.swot.threats : [],
   };
 
-  const competitorReportData = competitors.map((c, i) => 
-    `${i+1}. ${c.name || 'Brand'}\n   Features: ${c.features || '-'}\n   Price: ${c.price || 'N/A'}`
-  ).join('\n\n');
+  const marketingChannels = Array.isArray(result.marketingChannels) ? result.marketingChannels : [];
+  const actionPlan = Array.isArray(result.actionPlan) ? result.actionPlan : [];
+
+  // Format Data for Report
+  const competitorReportData = competitors.map((c, i) => `${i+1}. ${c.name}\n   ${c.features}\n   ${c.price}`).join('\n\n');
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in pb-12">
       
       {/* Header Summary */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative group">
+      <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-sm border border-blue-100 relative group">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-slate-900">{t.title}</h2>
-          <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium border border-blue-200">
+          <h2 className="text-3xl font-bold text-slate-900">{t.title}</h2>
+          <span className="px-4 py-1.5 bg-blue-600 text-white rounded-full text-sm font-semibold shadow-md">
             {marketName}
           </span>
         </div>
-        <p className="text-slate-700 leading-relaxed">{result.marketSummary || "Analysis completed."}</p>
+        <p className="text-slate-700 leading-relaxed text-lg">{result.marketSummary || "Analysis completed."}</p>
         
-        <div className="absolute top-6 right-6">
-             <AddToReportButton 
-                type="text" 
-                title="Market Summary" 
-                data={result.marketSummary || ""} 
-                language={language} 
-            />
+        <div className="absolute top-8 right-8">
+             <AddToReportButton type="text" title="Market Summary" data={result.marketSummary} language={language} />
         </div>
       </div>
 
+      {/* NEW: Strategic Insights Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+         {/* Consumer Sentiment */}
+         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
+            <div className="flex items-center gap-2 mb-3">
+               <div className="bg-pink-100 p-2 rounded-lg"><Heart className="w-5 h-5 text-pink-600" /></div>
+               <h3 className="text-lg font-bold text-slate-900">{t.consumerSentiment}</h3>
+            </div>
+            <p className="text-sm text-slate-600 leading-relaxed">{result.consumerSentiment}</p>
+            <div className="absolute top-6 right-6"><AddToReportButton type="text" title="Consumer Sentiment" data={result.consumerSentiment} language={language} /></div>
+         </div>
+
+         {/* Pricing Strategy */}
+         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
+            <div className="flex items-center gap-2 mb-3">
+               <div className="bg-green-100 p-2 rounded-lg"><DollarSign className="w-5 h-5 text-green-600" /></div>
+               <h3 className="text-lg font-bold text-slate-900">{t.pricingStrategy}</h3>
+            </div>
+            <p className="text-sm text-slate-600 leading-relaxed">{result.pricingStrategy}</p>
+            <div className="absolute top-6 right-6"><AddToReportButton type="text" title="Pricing Strategy" data={result.pricingStrategy} language={language} /></div>
+         </div>
+      </div>
+
       {/* Top Competitors */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-slate-900 flex items-center">
-                <Target className="w-5 h-5 mr-2 text-blue-600" />
-                {t.competitors}
-            </h3>
-            <AddToReportButton 
-                type="text" 
-                title="Top Competitors" 
-                data={competitorReportData} 
-                language={language} 
-            />
-          </div>
-          <div className="space-y-4">
-            {competitors.length > 0 ? competitors.map((comp, idx) => (
-              <div key={idx} className="p-4 border border-slate-100 rounded-lg hover:bg-slate-50 transition-colors">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium text-slate-900">{comp.name || "Unknown"}</h4>
-                    <p className="text-sm text-slate-500 mt-1 line-clamp-2">{comp.features || ""}</p>
-                  </div>
-                  {comp.price && <span className="font-semibold text-green-600 whitespace-nowrap ml-2">{comp.price}</span>}
-                </div>
-                {comp.website && (
-                  <a href={comp.website} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center text-xs text-blue-600 hover:underline">
-                    {t.visit} <ExternalLink className="w-3 h-3 ml-1" />
-                  </a>
-                )}
-              </div>
-            )) : (
-              <p className="text-sm text-slate-400 italic py-4 text-center">No competitor data found.</p>
-            )}
-          </div>
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
+        <div className="flex justify-between items-center mb-6">
+           <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Target className="w-6 h-6 text-blue-600" /> {t.competitors}
+           </h3>
+           <AddToReportButton type="text" title="Competitors" data={competitorReportData} language={language} />
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {competitors.length > 0 ? competitors.map((comp, idx) => (
+            <div key={idx} className="p-4 border border-slate-100 rounded-xl hover:border-blue-200 hover:shadow-md transition-all bg-slate-50">
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="font-bold text-slate-900 line-clamp-1">{comp.name || "Unknown"}</h4>
+                <span className="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded">{comp.price || "N/A"}</span>
+              </div>
+              <p className="text-xs text-slate-500 mb-3 line-clamp-3">{comp.features || ""}</p>
+              {comp.website && (
+                <a href={comp.website} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                  {t.visit} <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
+          )) : <div className="col-span-full text-center py-8 text-slate-400">No data found.</div>}
+        </div>
+      </div>
 
-        {/* SWOT Analysis */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
-          <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-slate-900 flex items-center">
-                <Shield className="w-5 h-5 mr-2 text-indigo-600" />
-                {t.swot}
-              </h3>
-              <AddToReportButton 
-                type="swot" 
-                title="SWOT Analysis" 
-                data={swot} 
-                language={language} 
-              />
+      {/* Marketing & Action Plan */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Marketing Channels */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
+             <div className="flex items-center gap-2 mb-4">
+               <div className="bg-purple-100 p-2 rounded-lg"><Megaphone className="w-5 h-5 text-purple-600" /></div>
+               <h3 className="text-lg font-bold text-slate-900">{t.marketingChannels}</h3>
+             </div>
+             <ul className="space-y-3">
+                {marketingChannels.map((channel, i) => (
+                   <li key={i} className="flex items-start gap-3 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
+                      <span className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">{i+1}</span>
+                      <span>{channel}</span>
+                   </li>
+                ))}
+             </ul>
+             <div className="absolute top-6 right-6"><AddToReportButton type="text" title="Marketing Channels" data={marketingChannels.join('\n')} language={language} /></div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 h-full">
-             <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-                <h4 className="font-semibold text-green-800 mb-2 text-sm">{t.strengths}</h4>
-                <ul className="list-disc list-inside text-xs text-green-900 space-y-1">
-                  {swot.strengths.map((s, i) => <li key={`s-${i}`}>{s}</li>)}
-                </ul>
+          {/* Action Plan */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
+             <div className="flex items-center gap-2 mb-4">
+               <div className="bg-orange-100 p-2 rounded-lg"><ListChecks className="w-5 h-5 text-orange-600" /></div>
+               <h3 className="text-lg font-bold text-slate-900">{t.actionPlan}</h3>
              </div>
-             <div className="p-4 bg-red-50 rounded-lg border border-red-100">
-                <h4 className="font-semibold text-red-800 mb-2 text-sm">{t.weaknesses}</h4>
-                 <ul className="list-disc list-inside text-xs text-red-900 space-y-1">
-                  {swot.weaknesses.map((s, i) => <li key={`w-${i}`}>{s}</li>)}
-                </ul>
-             </div>
-             <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <h4 className="font-semibold text-blue-800 mb-2 text-sm">{t.opportunities}</h4>
-                 <ul className="list-disc list-inside text-xs text-blue-900 space-y-1">
-                  {swot.opportunities.map((s, i) => <li key={`o-${i}`}>{s}</li>)}
-                </ul>
-             </div>
-             <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
-                <h4 className="font-semibold text-amber-800 mb-2 text-sm">{t.threats}</h4>
-                 <ul className="list-disc list-inside text-xs text-amber-900 space-y-1">
-                  {swot.threats.map((s, i) => <li key={`t-${i}`}>{s}</li>)}
-                </ul>
-             </div>
+             <ul className="space-y-3">
+                {actionPlan.map((step, i) => (
+                   <li key={i} className="flex items-start gap-3 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border-l-4 border-orange-400">
+                      <span>{step}</span>
+                   </li>
+                ))}
+             </ul>
+             <div className="absolute top-6 right-6"><AddToReportButton type="text" title="Action Plan" data={actionPlan.join('\n')} language={language} /></div>
           </div>
+      </div>
+
+      {/* SWOT Analysis */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
+        <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Shield className="w-6 h-6 text-indigo-600" />{t.swot}</h3>
+            <AddToReportButton type="swot" title="SWOT Analysis" data={swot} language={language} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <div className="p-5 bg-green-50 rounded-xl border border-green-100"><h4 className="font-bold text-green-800 mb-3">{t.strengths}</h4><ul className="list-disc list-inside text-sm text-green-900 space-y-2">{swot.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul></div>
+           <div className="p-5 bg-red-50 rounded-xl border border-red-100"><h4 className="font-bold text-red-800 mb-3">{t.weaknesses}</h4><ul className="list-disc list-inside text-sm text-red-900 space-y-2">{swot.weaknesses.map((s, i) => <li key={i}>{s}</li>)}</ul></div>
+           <div className="p-5 bg-blue-50 rounded-xl border border-blue-100"><h4 className="font-bold text-blue-800 mb-3">{t.opportunities}</h4><ul className="list-disc list-inside text-sm text-blue-900 space-y-2">{swot.opportunities.map((s, i) => <li key={i}>{s}</li>)}</ul></div>
+           <div className="p-5 bg-amber-50 rounded-xl border border-amber-100"><h4 className="font-bold text-amber-800 mb-3">{t.threats}</h4><ul className="list-disc list-inside text-sm text-amber-900 space-y-2">{swot.threats.map((s, i) => <li key={i}>{s}</li>)}</ul></div>
         </div>
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Trend Chart */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-semibold text-slate-900 flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-emerald-600" />
-                {t.trendTitle}
-            </h3>
-            <AddToReportButton 
-                type="chart-line" 
-                title="Market Trend 5-Year" 
-                data={trendsData} 
-                language={language} 
-            />
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-emerald-600" />{t.trendTitle}</h3>
+            <AddToReportButton type="chart-line" title="Market Trend" data={trendsData} language={language} />
           </div>
-          <p className="text-sm text-slate-500 mb-6 h-10 line-clamp-2">{result.marketSummary ? result.marketSummary.substring(0, 100) + "..." : ""}</p>
           <div className="h-64 w-full">
-            {trendsData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                {/* Key forces complete remount when data changes, avoiding update errors */}
-                <LineChart key={JSON.stringify(trendsData)} data={trendsData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="year" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }} isAnimationActive={false} />
-                  <Line type="monotone" dataKey="marketSize" stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} isAnimationActive={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : <div className="flex h-full items-center justify-center text-slate-400 text-sm">No trend data available.</div>}
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trendsData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="year" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip isAnimationActive={false} contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                <Line type="monotone" dataKey="marketSize" stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Market Share Chart */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-semibold text-slate-900 flex items-center">
-                <AlertCircle className="w-5 h-5 mr-2 text-purple-600" />
-                {t.shareTitle}
-            </h3>
-            <AddToReportButton 
-                type="chart-bar" 
-                title="Competitor Market Share" 
-                data={sharesData} 
-                language={language} 
-            />
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><AlertCircle className="w-5 h-5 text-purple-600" />{t.shareTitle}</h3>
+            <AddToReportButton type="chart-bar" title="Market Share" data={sharesData} language={language} />
           </div>
-           <p className="text-sm text-slate-500 mb-6 h-10">{t.shareSubtitle}</p>
           <div className="h-64 w-full">
-             {sharesData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                {/* Key forces complete remount when data changes, avoiding update errors */}
-                <BarChart 
-                  key={JSON.stringify(sharesData)}
-                  data={sharesData} 
-                  layout="vertical" 
-                  margin={{ left: 40 }}
-                >
+             <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={sharesData} layout="vertical" margin={{ left: 40 }} onMouseLeave={() => setHoveredBarIndex(null)}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
                   <XAxis type="number" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} unit="%" />
                   <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={10} width={100} tickLine={false} axisLine={false} />
-                  <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}} isAnimationActive={false} />
-                  <Bar 
-                    dataKey="share" 
-                    radius={[0, 4, 4, 0]} 
-                    barSize={20}
-                    isAnimationActive={false}
-                  >
+                  <Tooltip isAnimationActive={false} cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                  <Bar dataKey="share" radius={[0, 4, 4, 0]} barSize={20} isAnimationActive={false} onMouseEnter={(_, index) => setHoveredBarIndex(index)}>
                     {sharesData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={COLORS[index % COLORS.length]} 
-                      />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={hoveredBarIndex === null || hoveredBarIndex === index ? 1 : 0.3} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-             ) : (
-              <div className="h-full flex items-center justify-center text-slate-400 text-sm">No share data available.</div>
-             )}
           </div>
         </div>
       </div>
-
-      {/* Grounding Sources */}
-      {result.rawSearchLinks && result.rawSearchLinks.length > 0 && (
-        <div className="bg-slate-100 p-4 rounded-lg text-xs text-slate-500 break-all">
-          <span className="font-bold text-slate-600">{t.sources} </span>
-          {result.rawSearchLinks.slice(0, 3).map((link, i) => (
-             <span key={i} className="mx-1 text-blue-500 underline">{link}</span>
-          ))}
-        </div>
-      )}
 
     </div>
   );
