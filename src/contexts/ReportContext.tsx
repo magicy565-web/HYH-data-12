@@ -39,7 +39,7 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
-  // Implemented moveItem to satisfy ReportContextType interface
+  // Implement moveItem to satisfy the interface
   const moveItem = (id: string, direction: 'up' | 'down') => {
     setItems(prev => {
       const index = prev.findIndex(i => i.id === id);
