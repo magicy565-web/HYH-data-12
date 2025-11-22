@@ -25,7 +25,14 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
   const competitors = result.competitors || [];
   const trendsData = result.chartData?.trends || [];
   const sharesData = result.chartData?.shares || [];
-  const swot = result.swot || { strengths: [], weaknesses: [], opportunities: [], threats: [] };
+  
+  // Deep safe access for SWOT
+  const swot = {
+    strengths: result.swot?.strengths || [],
+    weaknesses: result.swot?.weaknesses || [],
+    opportunities: result.swot?.opportunities || [],
+    threats: result.swot?.threats || []
+  };
 
   // Format competitor data safely for report
   const competitorReportData = competitors.map((c, i) => 
@@ -112,25 +119,25 @@ export const ResultsView: React.FC<Props> = ({ result, formData, language }) => 
              <div className="p-4 bg-green-50 rounded-lg border border-green-100">
                 <h4 className="font-semibold text-green-800 mb-2 text-sm">{t.strengths}</h4>
                 <ul className="list-disc list-inside text-xs text-green-900 space-y-1">
-                  {swot.strengths?.map((s, i) => <li key={i}>{s}</li>)}
+                  {swot.strengths.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
              </div>
              <div className="p-4 bg-red-50 rounded-lg border border-red-100">
                 <h4 className="font-semibold text-red-800 mb-2 text-sm">{t.weaknesses}</h4>
                  <ul className="list-disc list-inside text-xs text-red-900 space-y-1">
-                  {swot.weaknesses?.map((s, i) => <li key={i}>{s}</li>)}
+                  {swot.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
              </div>
              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <h4 className="font-semibold text-blue-800 mb-2 text-sm">{t.opportunities}</h4>
                  <ul className="list-disc list-inside text-xs text-blue-900 space-y-1">
-                  {swot.opportunities?.map((s, i) => <li key={i}>{s}</li>)}
+                  {swot.opportunities.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
              </div>
              <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
                 <h4 className="font-semibold text-amber-800 mb-2 text-sm">{t.threats}</h4>
                  <ul className="list-disc list-inside text-xs text-amber-900 space-y-1">
-                  {swot.threats?.map((s, i) => <li key={i}>{s}</li>)}
+                  {swot.threats.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
              </div>
           </div>

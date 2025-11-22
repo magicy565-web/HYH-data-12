@@ -116,6 +116,7 @@ export const ReportBuilder: React.FC<Props> = ({ language }) => {
         className="bg-blue-600 text-white p-3.5 rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-105 flex items-center justify-center relative"
       >
         {isOpen ? <ChevronDown className="w-6 h-6" /> : <ShoppingCart className="w-6 h-6" />}
+        {/* Badge always visible if items exist */}
         {items.length > 0 && !isOpen && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
                 {items.length}
