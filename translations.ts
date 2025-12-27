@@ -201,6 +201,7 @@ export const translations = {
   },
   zh: {
     nav: {
+      insight: "深度洞察",
       title: "鸿亿鸿客户数据分析",
       online: "线上市场研究",
       trade: "线下贸易研究",
