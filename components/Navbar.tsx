@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { Globe, BarChart3, Package, Search, Languages, ImageOff } from 'lucide-react';
+import { Globe, BarChart3, Package, Search, Languages, ImageOff,Bot,LineChart } from 'lucide-react';
 import { Language } from '../types';
 import { translations } from '../translations';
 
 interface NavbarProps {
-  activeTab: 'online' | 'trade' | 'logistics' | 'tiktok';
-  setActiveTab: (tab: 'online' | 'trade' | 'logistics' | 'tiktok') => void;
+  activeTab: 'insight'|'online' | 'trade' | 'logistics' | 'tiktok';
+  setActiveTab: (tab: 'insight'| 'online' | 'trade' | 'logistics' | 'tiktok') => void;
   language: Language;
   setLanguage: (lang: Language) => void;
 }
@@ -55,6 +55,17 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, languag
             
             {/* Desktop Navigation */}
             <div className="hidden md:flex md:space-x-6">
+              <button
+  onClick={() => setActiveTab('insight')}
+  className={`${
+    activeTab === 'insight'
+      ? 'border-indigo-500 text-slate-900'
+      : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
+  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 h-full`}
+>
+  <LineChart className="w-4 h-4 mr-2" />
+  {t.insight}
+</button>
               <button
                 onClick={() => setActiveTab('online')}
                 className={`${
@@ -114,6 +125,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, languag
         
         {/* Mobile Menu (Simplified) */}
         <div className="md:hidden flex justify-between border-t border-slate-100 pt-2 pb-2 overflow-x-auto space-x-2 px-2 no-scrollbar">
+          <button onClick={() => setActiveTab('insight')} className={`flex-1 p-2 flex justify-center rounded-md transition-colors ${activeTab === 'insight' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-500'}`}>
+  <LineChart className="w-5 h-5" />
+</button>
              <button onClick={() => setActiveTab('online')} className={`flex-1 p-2 flex justify-center rounded-md transition-colors ${activeTab === 'online' ? 'text-blue-600 bg-blue-50' : 'text-slate-500'}`}><Globe className="w-5 h-5" /></button>
              <button onClick={() => setActiveTab('trade')} className={`flex-1 p-2 flex justify-center rounded-md transition-colors ${activeTab === 'trade' ? 'text-blue-600 bg-blue-50' : 'text-slate-500'}`}><BarChart3 className="w-5 h-5" /></button>
              <button onClick={() => setActiveTab('logistics')} className={`flex-1 p-2 flex justify-center rounded-md transition-colors ${activeTab === 'logistics' ? 'text-blue-600 bg-blue-50' : 'text-slate-500'}`}><Package className="w-5 h-5" /></button>
