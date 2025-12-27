@@ -4,6 +4,7 @@ import { TargetMarket, CompanyType, TradeCountry, TradeChannel } from "./types";
 export const translations = {
   en: {
     nav: {
+      insight: "Market Insight",
       title: "HYH Data analysis",
       online: "Online Research",
       trade: "Trade Research",
