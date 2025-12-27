@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { MarketInsight } from './components/MarketInsight';
 import { Navbar } from './components/Navbar';
 import { OnlineResearchForm } from './components/OnlineResearchForm';
 import { ResultsView } from './components/ResultsView';
@@ -11,7 +12,7 @@ import { analyzeMarket } from './services/geminiService';
 import { translations } from './translations';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'online' | 'trade' | 'logistics' | 'tiktok'>('online');
+  const [activeTab, setActiveTab] = useState<'online' | 'trade' | 'logistics' | 'tiktok' | 'agent' | 'insight'>('online');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ResearchResult | null>(null);
   const [lastFormData, setLastFormData] = useState<FormData | null>(null);
@@ -85,6 +86,11 @@ const App: React.FC = () => {
         {activeTab === 'tiktok' && (
           <TikTokDiscover language={language} />
         )}
+        {activeTab === 'insight' && (
+  <ErrorBoundary>
+    <MarketInsight />
+  </ErrorBoundary>
+)}
       </main>
       
       <footer className="border-t border-slate-200 bg-white mt-auto">
