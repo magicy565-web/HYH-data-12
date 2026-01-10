@@ -2,6 +2,7 @@ import { GoogleGenAI, Part } from "@google/genai";
 import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokShopLink, TikTokCreator, TikTokDiscoveryFilters, TradeCountry, TradeResearchResult, TradeChannel, Buyer, Language, CantonFairData, BuyerSize } from "../types";
 
 const getAiClient = () => {
+  // 直接硬编码 Key，确保运行时和构建时都能获取到
   const apiKey = "AIzaSyBF1G0He0QsalkIHiXBIeNlQcbkudJjWKs";
   
   if (!apiKey || apiKey.length < 10) {
@@ -11,6 +12,9 @@ const getAiClient = () => {
   
   return new GoogleGenAI({ apiKey });
 };
+
+// ... 文件的其余部分保持不变 ...
+// (请保留 convertFileToBase64, analyzeMarket 等其他原有函数)
 
 const convertFileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -28,6 +32,9 @@ const convertFileToBase64 = (file: File): Promise<string> => {
 export const analyzeMarket = async (formData: FormData, lang: Language): Promise<ResearchResult> => {
   const ai = getAiClient();
 
+  // ... (保留原 analyzeMarket 函数逻辑) ...
+  // 为节省篇幅，此处省略中间代码，请确保保留原文件中的完整业务逻辑
+  
   const imageParts: Part[] = await Promise.all(
     formData.images.map(async (file) => {
       const base64Data = await convertFileToBase64(file);
@@ -181,8 +188,21 @@ export const analyzeMarket = async (formData: FormData, lang: Language): Promise
 export const calculateLogistics = async (data: LogisticsFormData, lang: Language): Promise<LogisticsResult> => {
     const ai = getAiClient();
     const langInstruction = lang === 'zh' ? "Respond in Simplified Chinese. (Currency can remain in USD)." : "Respond in English.";
-    const promptText = `Act as a Logistics Expert... Product Dimensions: ${data.length}x${data.width}x${data.height}cm...`; 
-    // (Simplified for brevity, assume original implementation logic persists)
+    const promptText = `Act as a Logistics Expert. Estimate Sea and Air freight costs for shipping a product from Shenzhen, China to ${data.market} (${lang === 'zh' ? 'China to target' : 'China to target'}).
+    
+    Product Dimensions: ${data.length}x${data.width}x${data.height}cm
+    Weight: ${data.weight || "Unknown"} kg
+    Units per CBM: ${data.unitsPerCbm || "Unknown (Please estimate)"}
+
+    Respond with a valid JSON object only:
+    {
+      "seaFreightCost": { "perCbm": "$X - $Y", "perUnit": "$X.XX" },
+      "airFreightCost": { "perKg": "$X - $Y", "perUnit": "$X.XX" },
+      "advice": "Short strategic advice...",
+      "warehouses": ["Name of 3PL 1", "Name of 3PL 2", "Name of 3PL 3"]
+    }
+    ${langInstruction}`;
+
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -198,7 +218,7 @@ export const calculateLogistics = async (data: LogisticsFormData, lang: Language
 
 export const searchTikTokShop = async (shopName: string): Promise<TikTokShopLink[]> => {
     const ai = getAiClient();
-    const promptText = `Search TikTok content for "${shopName}"...`;
+    const promptText = `Search TikTok content for "${shopName}" and return a list of relevant video or shop links found on the web.`;
     try {
         const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts: [{ text: promptText }] }, config: { tools: [{ googleSearch: {} }] } });
         const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
@@ -211,7 +231,16 @@ export const searchTikTokShop = async (shopName: string): Promise<TikTokShopLink
 export const discoverTikTokCreators = async (filters: TikTokDiscoveryFilters, lang: Language): Promise<TikTokCreator[]> => {
     const ai = getAiClient();
     const langInstruction = lang === 'zh' ? "Respond in Simplified Chinese." : "Respond in English.";
-    const promptText = `Find TikTok creators in "${filters.topic}"... ${langInstruction}`;
+    const promptText = `Find 5 popular TikTok creators/influencers in the niche: "${filters.topic}".
+    Criteria:
+    - Avg Views: ${filters.views}
+    - Followers: ${filters.followers}
+    
+    Return JSON:
+    [
+      { "handle": "@username", "name": "Display Name", "followers": "1.2M", "avgViews": "50K", "description": "Short bio..." }
+    ]
+    ${langInstruction}`;
     try {
         const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts: [{ text: promptText }] }, config: { tools: [{ googleSearch: {} }] } });
         const text = response.text || "";
@@ -224,7 +253,16 @@ export const discoverTikTokCreators = async (filters: TikTokDiscoveryFilters, la
 export const analyzeTradeMarket = async (country: TradeCountry, niche: string, lang: Language): Promise<TradeResearchResult> => {
     const ai = getAiClient();
     const langInstruction = lang === 'zh' ? "Respond in Simplified Chinese." : "Respond in English.";
-    const promptText = `Evaluate OFFLINE market for "${niche}" in ${country}... ${langInstruction}`;
+    const promptText = `Evaluate the OFFLINE trade market potential for "${niche}" in ${country}.
+    Provide scores (1-10) and reasoning.
+    Return JSON:
+    {
+      "matchScore": 8,
+      "demandScore": 7,
+      "developmentScore": 6,
+      "reasoning": "Summary of analysis..."
+    }
+    ${langInstruction}`;
     try {
         const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts: [{ text: promptText }] } });
         const text = response.text || "";
@@ -239,7 +277,17 @@ export const analyzeTradeMarket = async (country: TradeCountry, niche: string, l
 export const findTradeBuyers = async (country: TradeCountry, channel: TradeChannel, niche: string, size: BuyerSize, distChannels: string, lang: Language): Promise<Buyer[]> => {
     const ai = getAiClient();
     const langInstruction = lang === 'zh' ? "Respond in Simplified Chinese." : "Respond in English.";
-    const promptText = `Find B2B buyers in ${country} for "${niche}"... ${langInstruction}`;
+    const promptText = `Find 5 real B2B buyers/retailers/distributors in ${country} for "${niche}".
+    Channel: ${channel}
+    Size: ${size}
+    Current Distribution: ${distChannels}
+    
+    Use Google Search to find real companies.
+    Return JSON:
+    [
+      { "name": "Company Name", "type": "Distributor/Retailer", "description": "Why they are a match...", "website": "URL" }
+    ]
+    ${langInstruction}`;
     try {
         const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts: [{ text: promptText }] }, config: { tools: [{ googleSearch: {} }] } });
         const text = response.text || "";
@@ -250,6 +298,7 @@ export const findTradeBuyers = async (country: TradeCountry, channel: TradeChann
 };
 
 export const searchCantonFairDatabase = async (country: string, product: string, year: string): Promise<CantonFairData[]> => {
+    // Mock data simulation - as per original file
     await new Promise(resolve => setTimeout(resolve, 1200));
     return [
         { id: 1, buyerName: `Global ${product} Imports`, country: country, products: `${product}, General`, contactInfo: "purchasing@global.example.com", sessionDate: `${year} Spring` },
