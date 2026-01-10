@@ -1,4 +1,3 @@
-
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -7,14 +6,13 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, '.', '');
 
-  // Use the provided key from environment variables (VITE_API_KEY or API_KEY)
-  const apiKey = env.VITE_API_KEY || env.API_KEY;
+  // 修改这里：加入您的硬编码 Key 作为默认值
+  const apiKey = env.VITE_API_KEY || env.API_KEY || "AIzaSyBF1G0He0QsalkIHiXBIeNlQcbkudJjWKs";
 
   return {
     plugins: [react()],
     define: {
-      // Polyfill process.env.API_KEY for the browser environment.
-      // This ensures `process.env.API_KEY` is replaced by the actual string value during build.
+      // 确保构建时能正确替换变量，避免 JSON.stringify(undefined)
       'process.env.API_KEY': JSON.stringify(apiKey),
     },
   }
