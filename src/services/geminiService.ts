@@ -1,16 +1,8 @@
-
 import { GoogleGenAI, Part } from "@google/genai";
 import { FormData, ResearchResult, LogisticsFormData, LogisticsResult, TikTokShopLink, TikTokCreator, TikTokDiscoveryFilters, TradeCountry, TradeResearchResult, TradeChannel, Buyer, Language, CantonFairData, BuyerSize } from "../types";
 
 const getAiClient = () => {
-  // Safe access to process.env
-  const safeProcess = typeof process !== 'undefined' ? process : { env: {} as any };
-  
-  // Prioritize Vite standard import.meta.env
-  const viteKey = (import.meta as any).env?.VITE_API_KEY;
-  const processKey = safeProcess.env?.API_KEY;
-  
-  const apiKey = viteKey || processKey;
+  const apiKey = "AIzaSyBF1G0He0QsalkIHiXBIeNlQcbkudJjWKs";
   
   if (!apiKey || apiKey.length < 10) {
     console.error("[Gemini Service] API Key is missing or invalid.");
@@ -186,7 +178,6 @@ export const analyzeMarket = async (formData: FormData, lang: Language): Promise
   }
 };
 
-// ... (rest of file remains the same, just re-exporting existing functions to ensure file integrity)
 export const calculateLogistics = async (data: LogisticsFormData, lang: Language): Promise<LogisticsResult> => {
     const ai = getAiClient();
     const langInstruction = lang === 'zh' ? "Respond in Simplified Chinese. (Currency can remain in USD)." : "Respond in English.";
